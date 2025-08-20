@@ -45,11 +45,52 @@ class DiaryStorage {
     return [...this.entries];
   }
   
+  // Search entries by query
+  searchEntries(query: string): DiaryEntry[] {
+    if (!query.trim()) {
+      return [...this.entries];
+    }
+    
+    const lowercaseQuery = query.toLowerCase();
+    return this.entries.filter(entry => 
+      entry.title.toLowerCase().includes(lowercaseQuery) ||
+      entry.content.toLowerCase().includes(lowercaseQuery)
+    );
+  }
+  
+  // Sort entries by criteria
+  sortEntries(entries: DiaryEntry[], criteria: 'date' | 'title' | 'favorite', ascending: boolean = true): DiaryEntry[] {
+    return [...entries].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (criteria) {
+        case 'date':
+          comparison = a.date.getTime() - b.date.getTime();
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'favorite':
+          comparison = (a.isFavorite === b.isFavorite) ? 0 : a.isFavorite ? -1 : 1;
+          break;
+      }
+      
+      return ascending ? comparison : -comparison;
+    });
+  }
+  
+  // Get favorite entries
+  getFavoriteEntries(): DiaryEntry[] {
+    return this.entries.filter(entry => entry.isFavorite);
+  }
+  
   // Add a new entry
   addEntry(entry: Omit<DiaryEntry, 'id'>): DiaryEntry {
     const newEntry: DiaryEntry = {
       ...entry,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      isLocked: entry.isLocked || false,
+      isFavorite: entry.isFavorite || false
     };
     
     this.entries = [newEntry, ...this.entries];
@@ -80,6 +121,9 @@ class DiaryStorage {
     totalWords: number;
     currentStreak: number;
     activityCalendar: boolean[];
+    mostFrequentWord: string;
+    totalMediaUploaded: number;
+    favoriteEntries: DiaryEntry[];
   } {
     // Calculate total entries
     const totalEntries = this.entries.length;
@@ -144,11 +188,57 @@ class DiaryStorage {
       });
     }
     
+    // Calculate most frequent word (excluding common filler words)
+    const fillerWords = new Set([
+      'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with',
+      'by', 'about', 'as', 'into', 'like', 'through', 'after', 'over', 'between',
+      'out', 'of', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'have', 'has', 'had', 'do', 'does', 'did', 'i', 'you', 'he', 'she', 'it',
+      'we', 'they', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'this',
+      'that', 'these', 'those', 'am', 'will', 'would', 'shall', 'should', 'can',
+      'could', 'not', 'very'
+    ]);
+    
+    const wordCounts: Record<string, number> = {};
+    
+    this.entries.forEach(entry => {
+      const words = entry.content.toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !fillerWords.has(word));
+        
+      words.forEach(word => {
+        wordCounts[word] = (wordCounts[word] || 0) + 1;
+      });
+    });
+    
+    let mostFrequentWord = 'None';
+    let highestCount = 0;
+    
+    Object.entries(wordCounts).forEach(([word, count]) => {
+      if (count > highestCount) {
+        mostFrequentWord = word;
+        highestCount = count;
+      }
+    });
+    
+    // Calculate total media uploaded
+    const totalMediaUploaded = this.entries.reduce(
+      (sum, entry) => sum + (entry.images ? entry.images.length : 0), 
+      0
+    );
+    
+    // Get favorite entries
+    const favoriteEntries = this.entries.filter(entry => entry.isFavorite);
+    
     return {
       totalEntries,
       totalWords,
       currentStreak,
-      activityCalendar
+      activityCalendar,
+      mostFrequentWord,
+      totalMediaUploaded,
+      favoriteEntries: favoriteEntries.slice(0, 5) // Limit to top 5 favorites
     };
   }
 }
@@ -160,6 +250,18 @@ const storage = new DiaryStorage();
 export const diaryService = {
   getAllEntries: async (): Promise<DiaryEntry[]> => {
     return storage.getAllEntries();
+  },
+  
+  searchEntries: async (query: string): Promise<DiaryEntry[]> => {
+    return storage.searchEntries(query);
+  },
+  
+  sortEntries: async (entries: DiaryEntry[], criteria: 'date' | 'title' | 'favorite', ascending: boolean = true): Promise<DiaryEntry[]> => {
+    return storage.sortEntries(entries, criteria, ascending);
+  },
+  
+  getFavoriteEntries: async (): Promise<DiaryEntry[]> => {
+    return storage.getFavoriteEntries();
   },
   
   addEntry: async (entry: Omit<DiaryEntry, 'id'>): Promise<DiaryEntry> => {

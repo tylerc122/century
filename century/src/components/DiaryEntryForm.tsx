@@ -193,11 +193,57 @@ const RemoveImageButton = styled.button`
   }
 `;
 
+const ToggleGroup = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+`;
+
+const ToggleLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.foreground};
+`;
+
+const ToggleSwitch = styled.div<{ checked: boolean }>`
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: ${({ checked, theme }) => checked ? theme.primary : theme.border};
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${({ checked }) => checked ? '22px' : '2px'};
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    transition: left 0.2s ease;
+  }
+`;
+
+const ToggleInput = styled.input`
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+`;
+
 const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [date, setDate] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -206,9 +252,13 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
       setContent(entry.content);
       setDate(entry.date.toISOString().split('T')[0]);
       setImages(entry.images || []);
+      setIsLocked(entry.isLocked || false);
+      setIsFavorite(entry.isFavorite || false);
     } else {
       // Default to today for new entries
       setDate(new Date().toISOString().split('T')[0]);
+      setIsLocked(false);
+      setIsFavorite(false);
     }
   }, [entry]);
 
@@ -218,7 +268,9 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
         title,
         content,
         date: new Date(date),
-        images
+        images,
+        isLocked,
+        isFavorite
       };
 
       if (entry?.id) {
@@ -324,6 +376,30 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
               </ImagePreviewContainer>
             )}
           </FormGroup>
+
+          <ToggleGroup>
+            <ToggleLabel htmlFor="lock-toggle">
+              <ToggleInput 
+                type="checkbox" 
+                id="lock-toggle" 
+                checked={isLocked}
+                onChange={() => setIsLocked(!isLocked)}
+              />
+              <ToggleSwitch checked={isLocked} />
+              <span>{isLocked ? '🔒 Entry Locked' : '🔓 Lock Entry'}</span>
+            </ToggleLabel>
+
+            <ToggleLabel htmlFor="favorite-toggle">
+              <ToggleInput 
+                type="checkbox" 
+                id="favorite-toggle" 
+                checked={isFavorite}
+                onChange={() => setIsFavorite(!isFavorite)}
+              />
+              <ToggleSwitch checked={isFavorite} />
+              <span>{isFavorite ? '⭐ Favorite' : '☆ Add to Favorites'}</span>
+            </ToggleLabel>
+          </ToggleGroup>
         </FormContent>
         
         <FormActions>

@@ -40,6 +40,55 @@ const EntriesHeader = styled.div`
   margin-bottom: 1rem;
 `;
 
+const SearchSortContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.background};
+  color: ${({ theme }) => theme.foreground};
+  
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.primary};
+  }
+`;
+
+const SortSelect = styled.select`
+  padding: 0.5rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.background};
+  color: ${({ theme }) => theme.foreground};
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.primary};
+  }
+`;
+
+const SortButton = styled.button<{ active: boolean }>`
+  padding: 0.5rem;
+  background-color: ${({ theme }) => theme.background};
+  color: ${({ active, theme }) => active ? theme.primary : theme.secondary};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.light};
+  }
+`;
+
 const Title = styled.h2`
   font-size: 1.25rem;
   font-weight: 600;
@@ -62,8 +111,8 @@ const NewEntryButton = styled.button`
 `;
 
 const EntryList = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
 `;
 
@@ -74,6 +123,11 @@ const EntryCard = styled.div`
   box-shadow: ${({ theme }) => theme.cardShadow};
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-2px);
@@ -81,28 +135,49 @@ const EntryCard = styled.div`
   }
 `;
 
+const EntryCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+`;
+
+const EntryStatusIcons = styled.div`
+  display: flex;
+  gap: 0.25rem;
+`;
+
+const EntryStatusIcon = styled.span`
+  font-size: 0.85rem;
+`;
+
 const EntryTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin: 0;
   color: ${({ theme }) => theme.foreground};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const EntryDate = styled.span`
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: ${({ theme }) => theme.secondary};
   display: block;
-  margin-bottom: 0.5rem;
+  margin: 0.25rem 0;
 `;
 
 const EntryPreview = styled.p`
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: ${({ theme }) => theme.foreground};
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+  margin: 0;
+  flex: 1;
 `;
 
 const LoadingMessage = styled.div`
@@ -120,29 +195,77 @@ const EmptyMessage = styled.div`
 // Helper function to format dates
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+    month: 'short',
+    day: 'numeric',
+    year: '2-digit'
   });
 };
 
 const DiaryEntryList: React.FC = () => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showEntryForm, setShowEntryForm] = useState<boolean>(false);
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortCriteria, setSortCriteria] = useState<'date' | 'title' | 'favorite'>('date');
+  const [sortAscending, setSortAscending] = useState<boolean>(false);
 
   const loadEntries = async () => {
     try {
       setIsLoading(true);
       const loadedEntries = await diaryService.getAllEntries();
-      setEntries(loadedEntries.length > 0 ? loadedEntries : mockEntries);
+      const entriesList = loadedEntries.length > 0 ? loadedEntries : mockEntries;
+      setEntries(entriesList);
+      applyFiltersAndSort(entriesList, searchQuery, sortCriteria, sortAscending);
     } catch (error) {
       console.error('Failed to load entries:', error);
       setEntries(mockEntries);
+      applyFiltersAndSort(mockEntries, searchQuery, sortCriteria, sortAscending);
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const applyFiltersAndSort = async (
+    entriesList: DiaryEntry[], 
+    query: string, 
+    criteria: 'date' | 'title' | 'favorite', 
+    ascending: boolean
+  ) => {
+    try {
+      // Apply search filter
+      let filtered = entriesList;
+      if (query.trim()) {
+        filtered = await diaryService.searchEntries(query);
+      }
+      
+      // Apply sorting
+      filtered = await diaryService.sortEntries(filtered, criteria, ascending);
+      
+      setFilteredEntries(filtered);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+      setFilteredEntries(entriesList);
+    }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    applyFiltersAndSort(entries, query, sortCriteria, sortAscending);
+  };
+  
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const criteria = e.target.value as 'date' | 'title' | 'favorite';
+    setSortCriteria(criteria);
+    applyFiltersAndSort(entries, searchQuery, criteria, sortAscending);
+  };
+  
+  const toggleSortDirection = () => {
+    const newDirection = !sortAscending;
+    setSortAscending(newDirection);
+    applyFiltersAndSort(entries, searchQuery, sortCriteria, newDirection);
   };
 
   useEffect(() => {
@@ -156,21 +279,51 @@ const DiaryEntryList: React.FC = () => {
         <NewEntryButton onClick={() => setShowEntryForm(true)}>New Entry</NewEntryButton>
       </EntriesHeader>
 
+      <SearchSortContainer>
+        <SearchInput 
+          type="text" 
+          placeholder="Search entries..." 
+          value={searchQuery}
+          onChange={handleSearch}
+        />
+        <SortSelect value={sortCriteria} onChange={handleSortChange}>
+          <option value="date">Date</option>
+          <option value="title">Title</option>
+          <option value="favorite">Favorites</option>
+        </SortSelect>
+        <SortButton 
+          active={sortAscending} 
+          onClick={toggleSortDirection}
+        >
+          {sortAscending ? '↑' : '↓'}
+        </SortButton>
+      </SearchSortContainer>
+
       <MemoryView onSelectEntry={setSelectedEntry} />
       
       <EntryList>
         {isLoading ? (
           <LoadingMessage>Loading entries...</LoadingMessage>
-        ) : entries.length > 0 ? (
-          entries.map((entry) => (
+        ) : filteredEntries.length > 0 ? (
+          filteredEntries.map((entry) => (
             <EntryCard key={entry.id} onClick={() => setSelectedEntry(entry)}>
-              <EntryTitle>{entry.title}</EntryTitle>
+              <EntryCardHeader>
+                <EntryTitle>{entry.title}</EntryTitle>
+                <EntryStatusIcons>
+                  {entry.isLocked && <EntryStatusIcon>🔒</EntryStatusIcon>}
+                  {entry.isFavorite && <EntryStatusIcon>⭐</EntryStatusIcon>}
+                </EntryStatusIcons>
+              </EntryCardHeader>
               <EntryDate>{formatDate(entry.date)}</EntryDate>
               <EntryPreview>{entry.content}</EntryPreview>
             </EntryCard>
           ))
         ) : (
-          <EmptyMessage>No entries yet. Create your first entry!</EmptyMessage>
+          <EmptyMessage>
+            {entries.length === 0 ? 
+              "No entries yet. Create your first entry!" : 
+              "No entries match your search."}
+          </EmptyMessage>
         )}
       </EntryList>
 

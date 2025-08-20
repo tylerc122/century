@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import ThemeToggle from '../components/ThemeToggle';
 import DiaryEntryList from '../components/DiaryEntryList';
 import Profile from '../components/Profile';
 import logo from '../assets/century.png';
@@ -34,9 +33,7 @@ const Title = styled.h1`
   color: ${({ theme }) => theme.foreground};
 `;
 
-const ThemeToggleContainer = styled.div`
-  margin-left: auto;
-`;
+
 
 const Content = styled.main`
   flex: 1;
@@ -76,9 +73,6 @@ function App() {
       <Header>
         <Logo src={logo} alt="century logo" />
         <Title>century</Title>
-        <ThemeToggleContainer>
-          <ThemeToggle />
-        </ThemeToggleContainer>
       </Header>
 
       <Content>

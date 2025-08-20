@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import diaryService from '../services/diaryService';
+import { DiaryEntry } from '../types';
 
 // Styled components
 const Container = styled.div`
@@ -66,6 +67,10 @@ const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+  
+  @media (min-width: 500px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
 `;
 
 const StatItem = styled.div`
@@ -96,6 +101,102 @@ const StreakContainer = styled.div`
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
+  margin-bottom: 2rem;
+`;
+
+const WordStatsContainer = styled.div`
+  width: 100%;
+  max-width: 500px;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: ${({ theme }) => theme.cardShadow};
+  margin-bottom: 2rem;
+`;
+
+const WordStatsTitle = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: ${({ theme }) => theme.foreground};
+`;
+
+const WordStatsContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const WordStatsItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.light};
+`;
+
+const WordStatsLabel = styled.span`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.secondary};
+`;
+
+const WordStatsValue = styled.span`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.primary};
+`;
+
+const FavoriteEntriesContainer = styled.div`
+  width: 100%;
+  max-width: 500px;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: ${({ theme }) => theme.cardShadow};
+`;
+
+const FavoriteEntriesTitle = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: ${({ theme }) => theme.foreground};
+`;
+
+const FavoriteEntriesList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const FavoriteEntryCard = styled.div`
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.light};
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const FavoriteEntryTitle = styled.div`
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.foreground};
+  margin-bottom: 0.25rem;
+`;
+
+const FavoriteEntryDate = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.secondary};
+`;
+
+const EmptyFavorites = styled.div`
+  text-align: center;
+  padding: 1rem;
+  color: ${({ theme }) => theme.secondary};
+  font-size: 0.9rem;
 `;
 
 const StreakTitle = styled.h3`
@@ -147,7 +248,10 @@ const Profile: React.FC = () => {
     totalEntries: 0,
     totalWords: 0,
     currentStreak: 0,
-    activityCalendar: Array(28).fill(false)
+    activityCalendar: Array(28).fill(false),
+    mostFrequentWord: 'None',
+    totalMediaUploaded: 0,
+    favoriteEntries: [] as DiaryEntry[]
   });
   const [isLoading, setIsLoading] = useState(true);
   const [joinedDate] = useState(mockJoinedDate);
@@ -197,6 +301,14 @@ const Profile: React.FC = () => {
             <StatValue>{stats.totalWords}</StatValue>
             <StatLabel>Total Words</StatLabel>
           </StatItem>
+          <StatItem>
+            <StatValue>{stats.totalMediaUploaded}</StatValue>
+            <StatLabel>Media Uploaded</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue>{stats.favoriteEntries.length}</StatValue>
+            <StatLabel>Favorite Entries</StatLabel>
+          </StatItem>
         </StatsGrid>
       </StatsContainer>
 
@@ -211,9 +323,46 @@ const Profile: React.FC = () => {
           ))}
         </CalendarGrid>
       </StreakContainer>
+      
+      <WordStatsContainer>
+        <WordStatsTitle>Word Statistics</WordStatsTitle>
+        <WordStatsContent>
+          <WordStatsItem>
+            <WordStatsLabel>Most Frequent Word</WordStatsLabel>
+            <WordStatsValue>{stats.mostFrequentWord}</WordStatsValue>
+          </WordStatsItem>
+          <WordStatsItem>
+            <WordStatsLabel>Average Words Per Entry</WordStatsLabel>
+            <WordStatsValue>
+              {stats.totalEntries > 0 
+                ? Math.round(stats.totalWords / stats.totalEntries) 
+                : 0}
+            </WordStatsValue>
+          </WordStatsItem>
+        </WordStatsContent>
+      </WordStatsContainer>
+      
+      <FavoriteEntriesContainer>
+        <FavoriteEntriesTitle>Favorite Entries</FavoriteEntriesTitle>
+        {stats.favoriteEntries.length > 0 ? (
+          <FavoriteEntriesList>
+            {stats.favoriteEntries.map(entry => (
+              <FavoriteEntryCard key={entry.id}>
+                <FavoriteEntryTitle>{entry.title}</FavoriteEntryTitle>
+                <FavoriteEntryDate>{entry.date.toLocaleDateString()}</FavoriteEntryDate>
+              </FavoriteEntryCard>
+            ))}
+          </FavoriteEntriesList>
+        ) : (
+          <EmptyFavorites>
+            You haven't marked any entries as favorites yet.
+          </EmptyFavorites>
+        )}
+      </FavoriteEntriesContainer>
     </Container>
   );
 };
 
 export default Profile;
+
 
