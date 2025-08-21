@@ -17,6 +17,8 @@ declare module 'styled-components' {
     cardShadow: string;
     headerBackground: string;
     navBackground: string;
+    accent1?: string;
+    accent2?: string;
   }
 }
 

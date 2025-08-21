@@ -15,22 +15,49 @@ const AppContainer = styled.div`
 `;
 
 const Header = styled.header`
+  padding: 16px 20px;
+  background-color: transparent;
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background-color: ${({ theme }) => theme.headerBackground};
-  border-bottom: 1px solid ${({ theme }) => theme.border};
-`;
-
-const Logo = styled.img`
-  height: 40px;
-  margin-right: 1rem;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(215, 204, 200, 0.5);
 `;
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 500;
   color: ${({ theme }) => theme.foreground};
+  letter-spacing: 0.03em;
+  opacity: 0.85;
+  font-family: 'Space Grotesk', sans-serif;
+`;
+
+const NewEntryButton = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.primary};
+  border: none;
+  color: white;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.primary + 'DD'};
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+  }
 `;
 
 
@@ -67,16 +94,17 @@ const NavButton = styled.button<{ active: boolean }>`
 
 function App() {
   const [activeView, setActiveView] = useState<'entries' | 'profile'>('entries');
+  const [showEntryForm, setShowEntryForm] = useState<boolean>(false);
 
   return (
     <AppContainer>
       <Header>
-        <Logo src={logo} alt="century logo" />
         <Title>century</Title>
+        <NewEntryButton onClick={() => setShowEntryForm(true)}>+</NewEntryButton>
       </Header>
 
       <Content>
-        {activeView === 'entries' && <DiaryEntryList />}
+        {activeView === 'entries' && <DiaryEntryList showEntryForm={showEntryForm} setShowEntryForm={setShowEntryForm} />}
         {activeView === 'profile' && <Profile />}
       </Content>
 

@@ -12,14 +12,18 @@ const mockEntries: DiaryEntry[] = [
     date: new Date('2024-08-20'),
     title: 'My First Entry',
     content: 'Today I started using Century, my new diary app!',
-    images: []
+    images: [],
+    isLocked: false,
+    isFavorite: false
   },
   {
     id: '2',
     date: new Date('2024-08-19'),
     title: 'Planning My Week',
     content: 'I need to organize my tasks for the upcoming week...',
-    images: []
+    images: [],
+    isLocked: false,
+    isFavorite: true
   }
 ];
 
@@ -31,13 +35,7 @@ const Container = styled.div`
   padding: 1rem;
   overflow-y: auto;
   background-color: ${({ theme }) => theme.background};
-`;
-
-const EntriesHeader = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 1rem;
+  position: relative;
 `;
 
 const SearchSortContainer = styled.div`
@@ -79,35 +77,84 @@ const SearchInput = styled.input`
   }
 `;
 
-const SortSelect = styled.select`
-  padding: 0.75rem 1rem;
+const StyledDropdownContainer = styled.div`
+  position: relative;
+  background-color: ${({ theme }) => theme.cardBackground};
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.cardBackground};
-  color: ${({ theme }) => theme.foreground};
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(93, 64, 55, 0.08);
+  min-width: 120px;
   cursor: pointer;
-  font-size: 0.95rem;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(
-    '#8D6E63'
-  )}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1em;
-  padding-right: 2.5rem;
-  transition: all 0.3s ease;
-  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+`;
+
+const DropdownHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: ${({ theme }) => theme.foreground};
   font-weight: 500;
+  font-size: 0.95rem;
+  line-height: normal;
   
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
-    border-color: ${({ theme }) => theme.primary};
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
   }
+  
+  &.open svg {
+    transform: rotate(180deg);
+  }
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 100%;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+  z-index: 100;
+`;
+
+const MenuItem = styled.div<{ active: boolean }>`
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  background-color: ${({ active }) => active ? `rgba(210, 105, 30, 0.15)` : 'transparent'};
+  font-weight: ${({ active }) => active ? 500 : 400};
   
   &:hover {
-    border-color: ${({ theme }) => theme.secondary};
+    background-color: rgba(210, 105, 30, 0.08);
   }
+  
+  svg {
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+`;
+
+// Hidden actual select for accessibility
+const HiddenSelect = styled.select`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 `;
 
 const SortButton = styled.button<{ active: boolean }>`
@@ -132,58 +179,9 @@ const SortButton = styled.button<{ active: boolean }>`
   }
 `;
 
-const Title = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.foreground};
-`;
 
-const NewEntryButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.primary + 'DD'});
-  color: white;
-  border: none;
-  border-radius: 30px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px ${({ theme }) => theme.primary + '40'};
-  letter-spacing: 0.02em;
-  font-size: 0.95rem;
-  position: relative;
-  overflow: hidden;
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: all 0.6s ease;
-  }
-
-  &:hover {
-    background: linear-gradient(135deg, ${({ theme }) => theme.primary + 'EE'}, ${({ theme }) => theme.primary});
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px ${({ theme }) => theme.primary + '50'};
-    
-    &::after {
-      left: 100%;
-    }
-  }
-  
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.primary + '40'}, 0 4px 10px ${({ theme }) => theme.primary + '40'};
-  }
-  
-  &:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 5px ${({ theme }) => theme.primary + '40'};
-  }
-`;
+// Removed unused component
 
 const EntryList = styled.div`
   display: grid;
@@ -298,15 +296,20 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const DiaryEntryList: React.FC = () => {
+interface DiaryEntryListProps {
+  showEntryForm: boolean;
+  setShowEntryForm: (show: boolean) => void;
+}
+
+const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ showEntryForm, setShowEntryForm }) => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showEntryForm, setShowEntryForm] = useState<boolean>(false);
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortCriteria, setSortCriteria] = useState<'date' | 'title' | 'favorite'>('date');
   const [sortAscending, setSortAscending] = useState<boolean>(false);
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   const loadEntries = async () => {
     try {
@@ -369,12 +372,33 @@ const DiaryEntryList: React.FC = () => {
     loadEntries();
   }, []);
 
+  const handleDropdownClick = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleMenuItemClick = (criteria: 'date' | 'title' | 'favorite') => {
+    setSortCriteria(criteria);
+    applyFiltersAndSort(entries, searchQuery, criteria, sortAscending);
+    setDropdownOpen(false);
+  };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <Container>
-      <EntriesHeader>
-        <NewEntryButton onClick={() => setShowEntryForm(true)}>New Entry</NewEntryButton>
-      </EntriesHeader>
-
       <SearchSortContainer>
         <SearchInput 
           type="text" 
@@ -382,11 +406,59 @@ const DiaryEntryList: React.FC = () => {
           value={searchQuery}
           onChange={handleSearch}
         />
-        <SortSelect value={sortCriteria} onChange={handleSortChange}>
-          <option value="date">Date</option>
-          <option value="title">Title</option>
-          <option value="favorite">Favorites</option>
-        </SortSelect>
+        
+        <StyledDropdownContainer className="dropdown-container">
+          <DropdownHeader 
+            className={dropdownOpen ? 'open' : ''}
+            onClick={handleDropdownClick}
+          >
+            {sortCriteria.charAt(0).toUpperCase() + sortCriteria.slice(1)}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </DropdownHeader>
+          
+          {/* Hidden accessible select for screen readers */}
+          <HiddenSelect 
+            value={sortCriteria} 
+            onChange={handleSortChange}
+            aria-label="Sort entries by"
+          >
+            <option value="date">Date</option>
+            <option value="title">Title</option>
+            <option value="favorite">Favorites</option>
+          </HiddenSelect>
+          
+          {dropdownOpen && (
+            <DropdownMenu>
+              <MenuItem 
+                active={sortCriteria === 'date'} 
+                onClick={() => handleMenuItemClick('date')}
+              >
+                {sortCriteria === 'date' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>} Date
+              </MenuItem>
+              <MenuItem 
+                active={sortCriteria === 'title'} 
+                onClick={() => handleMenuItemClick('title')}
+              >
+                {sortCriteria === 'title' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>} Title
+              </MenuItem>
+              <MenuItem 
+                active={sortCriteria === 'favorite'} 
+                onClick={() => handleMenuItemClick('favorite')}
+              >
+                {sortCriteria === 'favorite' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>} Favorites
+              </MenuItem>
+            </DropdownMenu>
+          )}
+        </StyledDropdownContainer>
+        
         <SortButton 
           active={sortAscending} 
           onClick={toggleSortDirection}
@@ -406,8 +478,17 @@ const DiaryEntryList: React.FC = () => {
               <EntryCardHeader>
                 <EntryTitle>{entry.title}</EntryTitle>
                 <EntryStatusIcons>
-                  {entry.isLocked && <EntryStatusIcon>🔒</EntryStatusIcon>}
-                  {entry.isFavorite && <EntryStatusIcon>⭐</EntryStatusIcon>}
+                  {entry.isLocked && <EntryStatusIcon>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </EntryStatusIcon>}
+                  {entry.isFavorite && <EntryStatusIcon>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </EntryStatusIcon>}
                 </EntryStatusIcons>
               </EntryCardHeader>
               <EntryDate>{formatDate(entry.date)}</EntryDate>
@@ -422,6 +503,8 @@ const DiaryEntryList: React.FC = () => {
           </EmptyMessage>
         )}
       </EntryList>
+
+      {/* Button moved to header */}
 
       {showEntryForm && (
         <DiaryEntryForm 
