@@ -2,7 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import DiaryEntryList from '../components/DiaryEntryList';
 import Profile from '../components/Profile';
-import logo from '../assets/century.png';
+
 
 // Styled components
 const AppContainer = styled.div`
