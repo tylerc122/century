@@ -35,7 +35,7 @@ const Container = styled.div`
 
 const EntriesHeader = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 1rem;
 `;
@@ -50,42 +50,71 @@ const SearchSortContainer = styled.div`
 const SearchInput = styled.input`
   flex: 1;
   min-width: 200px;
-  padding: 0.5rem;
-  border: 1px solid ${({ theme }) => theme.border};
+  padding: 0.5rem 0.75rem;
+  border: none;
   border-radius: 4px;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.light};
   color: ${({ theme }) => theme.foreground};
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  
+  &::placeholder {
+    color: ${({ theme }) => theme.secondary};
+  }
   
   &:focus {
     outline: none;
-    border-color: ${({ theme }) => theme.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+  }
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.border};
   }
 `;
 
 const SortSelect = styled.select`
-  padding: 0.5rem;
-  border: 1px solid ${({ theme }) => theme.border};
+  padding: 0.5rem 0.75rem;
+  border: none;
   border-radius: 4px;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.light};
   color: ${({ theme }) => theme.foreground};
   cursor: pointer;
+  font-size: 0.9rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1em;
+  padding-right: 2rem;
+  transition: background-color 0.2s ease;
   
   &:focus {
     outline: none;
-    border-color: ${({ theme }) => theme.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+  }
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.border};
   }
 `;
 
 const SortButton = styled.button<{ active: boolean }>`
-  padding: 0.5rem;
-  background-color: ${({ theme }) => theme.background};
+  padding: 0.5rem 0.75rem;
+  background-color: ${({ theme }) => theme.light};
   color: ${({ active, theme }) => active ? theme.primary : theme.secondary};
-  border: 1px solid ${({ theme }) => theme.border};
+  border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
   
   &:hover {
-    background-color: ${({ theme }) => theme.light};
+    background-color: ${({ theme }) => theme.border};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
   }
 `;
 
@@ -96,17 +125,30 @@ const Title = styled.h2`
 `;
 
 const NewEntryButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   background-color: ${({ theme }) => theme.primary};
   color: white;
   border: none;
   border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px ${({ theme }) => theme.primary + '40'};
 
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
+    background-color: ${({ theme }) => theme.primary + 'ee'};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px ${({ theme }) => theme.primary + '30'};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'}, 0 2px 4px ${({ theme }) => theme.primary + '40'};
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px ${({ theme }) => theme.primary + '40'};
   }
 `;
 
@@ -275,7 +317,6 @@ const DiaryEntryList: React.FC = () => {
   return (
     <Container>
       <EntriesHeader>
-        <Title>My Diary Entries</Title>
         <NewEntryButton onClick={() => setShowEntryForm(true)}>New Entry</NewEntryButton>
       </EntriesHeader>
 
