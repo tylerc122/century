@@ -5,28 +5,6 @@ import diaryService from '../services/diaryService';
 import DiaryEntryForm from '../components/DiaryEntryForm';
 import MemoryView from '../components/MemoryView';
 
-// Mock data for initial display
-const mockEntries: DiaryEntry[] = [
-  {
-    id: '1',
-    date: new Date('2024-08-20'),
-    title: 'My First Entry',
-    content: 'Today I started using Century, my new diary app!',
-    images: [],
-    isLocked: false,
-    isFavorite: false
-  },
-  {
-    id: '2',
-    date: new Date('2024-08-19'),
-    title: 'Planning My Week',
-    content: 'I need to organize my tasks for the upcoming week...',
-    images: [],
-    isLocked: false,
-    isFavorite: true
-  }
-];
-
 // Styled components
 const Container = styled.div`
   width: 100%;
@@ -285,6 +263,17 @@ const EmptyMessage = styled.div`
   padding: 2rem;
   text-align: center;
   color: ${({ theme }) => theme.secondary};
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 `;
 
 // Helper function to format dates
@@ -321,13 +310,12 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
     try {
       setIsLoading(true);
       const loadedEntries = await diaryService.getAllEntries();
-      const entriesList = loadedEntries.length > 0 ? loadedEntries : mockEntries;
-      setEntries(entriesList);
-      applyFiltersAndSort(entriesList, searchQuery, sortCriteria, sortAscending);
+      setEntries(loadedEntries);
+      applyFiltersAndSort(loadedEntries, searchQuery, sortCriteria, sortAscending);
     } catch (error) {
       console.error('Failed to load entries:', error);
-      setEntries(mockEntries);
-      applyFiltersAndSort(mockEntries, searchQuery, sortCriteria, sortAscending);
+      setEntries([]);
+      setFilteredEntries([]);
     } finally {
       setIsLoading(false);
     }
@@ -502,9 +490,19 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
           ))
         ) : (
           <EmptyMessage>
-            {entries.length === 0 ? 
-              "No entries yet. Create your first entry!" : 
-              "No entries match your search."}
+            {entries.length === 0 ? (
+              <>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <div>No entries yet. Click the + button to create your first entry!</div>
+              </>
+            ) : (
+              "No entries match your search."
+            )}
           </EmptyMessage>
         )}
       </EntryList>

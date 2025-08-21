@@ -8,10 +8,34 @@ const Container = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
   padding: 2rem;
   overflow-y: auto;
   background-color: ${({ theme }) => theme.background};
+`;
+
+const DesktopLayout = styled.div`
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const LeftColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+`;
+
+const RightColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 `;
 
 const ProfileHeader = styled.div`
@@ -48,12 +72,10 @@ const JoinedDate = styled.p`
 
 const StatsContainer = styled.div`
   width: 100%;
-  max-width: 500px;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
-  margin-bottom: 2rem;
 `;
 
 const StatsTitle = styled.h3`
@@ -104,12 +126,10 @@ const StatLabel = styled.span`
 
 const StreakContainer = styled.div`
   width: 100%;
-  max-width: 500px;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
-  margin-bottom: 2rem;
 `;
 
 const CalendarContainer = styled.div`
@@ -170,12 +190,10 @@ const WeekdayLabel = styled.div`
 
 const WordStatsContainer = styled.div`
   width: 100%;
-  max-width: 500px;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
-  margin-bottom: 2rem;
 `;
 
 const WordStatsTitle = styled.h3`
@@ -212,7 +230,6 @@ const WordStatsValue = styled.span`
 
 const FavoriteEntriesContainer = styled.div`
   width: 100%;
-  max-width: 500px;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
   padding: 1.5rem;
@@ -367,12 +384,20 @@ const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: auto;
-  gap: 0.35rem;
+  gap: 0.5rem;
   width: 100%;
   margin: 0 auto;
-  padding: 0.5rem;
+  padding: 1rem;
   background-color: ${({ theme }) => theme.light};
   border-radius: 8px;
+  
+  @media (min-width: 768px) {
+    gap: 0.6rem;
+  }
+  
+  @media (min-width: 1200px) {
+    gap: 0.75rem;
+  }
 `;
 
 const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean }>`
@@ -382,15 +407,15 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
     if (props.active) return props.theme.primary;
     return props.theme.border;
   }};
-  border-radius: 4px;
-  min-height: 30px;
-  min-width: 30px;
+  border-radius: 8px;
+  min-height: 36px;
+  min-width: 36px;
   border: ${props => props.isEmpty ? 'none' : props.isToday ? `2px solid ${props.theme.dark}` : `1px solid ${props.theme.border}`};
   cursor: ${props => props.isEmpty ? 'default' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: ${props => props.isToday ? '700' : '400'};
   color: ${props => {
     if (props.isEmpty) return 'transparent';
@@ -398,12 +423,19 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
     return props.theme.secondary;
   }};
   position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   
   &:hover {
     ${props => !props.isEmpty && `
       transform: scale(1.1);
       z-index: 10;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     `}
+  }
+  
+  @media (min-width: 1200px) {
+    min-height: 40px;
+    min-width: 40px;
   }
 `;
 
@@ -465,9 +497,9 @@ const LockedContent = styled.div`
   padding: 10px 0;
 `;
 
-// Mock data for initial state
-const mockJoinedDate = new Date();
-mockJoinedDate.setMonth(mockJoinedDate.getMonth() - 1); // Joined a month ago
+// Get the current date for the joined date if not available
+const defaultJoinedDate = new Date();
+defaultJoinedDate.setMonth(defaultJoinedDate.getMonth() - 1); // Fallback to joined a month ago
 
 interface ProfileProps {
   onSelectEntry: (entry: DiaryEntry) => void;
@@ -484,7 +516,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
     favoriteEntries: [] as DiaryEntry[]
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [joinedDate] = useState(mockJoinedDate);
+  const [joinedDate] = useState(defaultJoinedDate);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [activityData, setActivityData] = useState<Record<string, boolean>>({});
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -706,177 +738,183 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
 
   return (
     <Container>
-      <ProfileHeader>
-        <Avatar>U</Avatar>
-        <Username>User</Username>
-        <JoinedDate>
-          Joined {joinedDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long',
-            day: 'numeric'
-          })}
-        </JoinedDate>
-      </ProfileHeader>
+      <DesktopLayout>
+        <LeftColumn>
+          <ProfileHeader>
+            <Avatar>U</Avatar>
+            <Username>User</Username>
+            <JoinedDate>
+              Joined {joinedDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long',
+                day: 'numeric'
+              })}
+            </JoinedDate>
+          </ProfileHeader>
 
-      <StatsContainer>
-        <StatsTitle>Your Stats</StatsTitle>
-        <StatsGrid>
-          <StatItem>
-            <StatValue>{stats.totalEntries}</StatValue>
-            <StatLabel>Total Entries</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>{stats.totalWords}</StatValue>
-            <StatLabel>Total Words</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>{stats.totalMediaUploaded}</StatValue>
-            <StatLabel>Media Uploaded</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>{stats.favoriteEntries.length}</StatValue>
-            <StatLabel>Favorite Entries</StatLabel>
-          </StatItem>
-        </StatsGrid>
-      </StatsContainer>
-
-      <StreakContainer>
-        <StreakTitle>Activity Calendar</StreakTitle>
-        <StreakValue>{stats.currentStreak} days</StreakValue>
-        <CalendarContainer>
-          <CalendarHeader>
-            <CalendarNavButton onClick={() => handleCalendarNavigation('prev')}>
-              &lt;
-            </CalendarNavButton>
-            <CalendarControls>
-              <CalendarMonthYear>
-                {calendarDate.toLocaleDateString('en-US', { month: 'long' })}
-              </CalendarMonthYear>
-              
-              <StyledDropdownContainer className="year-dropdown-container" onClick={handleDropdownClick}>
-                <DropdownHeader className={dropdownOpen ? 'open' : ''}>
-                  {calendarDate.getFullYear()}
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </DropdownHeader>
-                
-                {/* Hidden accessible select for screen readers */}
-                <HiddenSelect 
-                  value={calendarDate.getFullYear()} 
-                  onChange={(e) => handleYearChange(parseInt(e.target.value))}
-                  aria-label="Select year"
-                >
-                  {renderYearOptions()}
-                </HiddenSelect>
-                
-                {dropdownOpen && (
-                  <DropdownMenu>
-                    {(() => {
-                      const currentYear = new Date().getFullYear();
-                      const years = [];
-                      
-                      for (let year = currentYear - 5; year <= currentYear; year++) {
-                        years.push(
-                          <MenuItem 
-                            key={year}
-                            active={calendarDate.getFullYear() === year}
-                            onClick={() => handleMenuItemClick(year)}
-                          >
-                            {calendarDate.getFullYear() === year && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>}
-                            {year}
-                          </MenuItem>
-                        );
-                      }
-                      
-                      return years;
-                    })()}
-                  </DropdownMenu>
-                )}
-              </StyledDropdownContainer>
-            </CalendarControls>
-            <CalendarNavButton onClick={() => handleCalendarNavigation('next')}>
-              &gt;
-            </CalendarNavButton>
-          </CalendarHeader>
-          <WeekdayLabels>
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-              <WeekdayLabel key={i}>{day}</WeekdayLabel>
-            ))}
-          </WeekdayLabels>
-          <CalendarGrid ref={calendarGridRef}>
-            {renderCalendarDays()}
-          </CalendarGrid>
+          <StatsContainer>
+            <StatsTitle>Your Stats</StatsTitle>
+            <StatsGrid>
+              <StatItem>
+                <StatValue>{stats.totalEntries}</StatValue>
+                <StatLabel>Total Entries</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{stats.totalWords}</StatValue>
+                <StatLabel>Total Words</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{stats.totalMediaUploaded}</StatValue>
+                <StatLabel>Media Uploaded</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{stats.favoriteEntries.length}</StatValue>
+                <StatLabel>Favorite Entries</StatLabel>
+              </StatItem>
+            </StatsGrid>
+          </StatsContainer>
           
-          {/* Entry Preview Popup */}
-          <EntryPreview 
-            visible={previewVisible} 
-            position={previewPosition}
-          >
-            {previewLoading ? (
-              <PreviewContent>Loading...</PreviewContent>
-            ) : previewEntry ? (
-              previewEntry.isLocked ? (
-                <LockedContent>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  This entry is locked
-                </LockedContent>
-              ) : (
-                <>
-                  <PreviewTitle>{previewEntry.title}</PreviewTitle>
-                  <PreviewDate>{new Date(previewEntry.date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}</PreviewDate>
-                  <PreviewContent>{previewEntry.content}</PreviewContent>
-                </>
-              )
-            ) : null}
-          </EntryPreview>
-        </CalendarContainer>
-      </StreakContainer>
-      
-      <WordStatsContainer>
-        <WordStatsTitle>Word Statistics</WordStatsTitle>
-        <WordStatsContent>
-          <WordStatsItem>
-            <WordStatsLabel>Most Frequent Word</WordStatsLabel>
-            <WordStatsValue>{stats.mostFrequentWord}</WordStatsValue>
-          </WordStatsItem>
-          <WordStatsItem>
-            <WordStatsLabel>Average Words Per Entry</WordStatsLabel>
-            <WordStatsValue>
-              {stats.totalEntries > 0 
-                ? Math.round(stats.totalWords / stats.totalEntries) 
-                : 0}
-            </WordStatsValue>
-          </WordStatsItem>
-        </WordStatsContent>
-      </WordStatsContainer>
-      
-      <FavoriteEntriesContainer>
-        <FavoriteEntriesTitle>Favorite Entries</FavoriteEntriesTitle>
-        {stats.favoriteEntries.length > 0 ? (
-          <FavoriteEntriesList>
-            {stats.favoriteEntries.map(entry => (
-              <FavoriteEntryCard key={entry.id}>
-                <FavoriteEntryTitle>{entry.title}</FavoriteEntryTitle>
-                <FavoriteEntryDate>{entry.date.toLocaleDateString()}</FavoriteEntryDate>
-              </FavoriteEntryCard>
-            ))}
-          </FavoriteEntriesList>
-        ) : (
-          <EmptyFavorites>
-            You haven't marked any entries as favorites yet.
-          </EmptyFavorites>
-        )}
-      </FavoriteEntriesContainer>
+          <WordStatsContainer>
+            <WordStatsTitle>Word Statistics</WordStatsTitle>
+            <WordStatsContent>
+              <WordStatsItem>
+                <WordStatsLabel>Most Frequent Word</WordStatsLabel>
+                <WordStatsValue>{stats.mostFrequentWord}</WordStatsValue>
+              </WordStatsItem>
+              <WordStatsItem>
+                <WordStatsLabel>Average Words Per Entry</WordStatsLabel>
+                <WordStatsValue>
+                  {stats.totalEntries > 0 
+                    ? Math.round(stats.totalWords / stats.totalEntries) 
+                    : 0}
+                </WordStatsValue>
+              </WordStatsItem>
+            </WordStatsContent>
+          </WordStatsContainer>
+          
+          <FavoriteEntriesContainer>
+            <FavoriteEntriesTitle>Favorite Entries</FavoriteEntriesTitle>
+            {stats.favoriteEntries.length > 0 ? (
+              <FavoriteEntriesList>
+                {stats.favoriteEntries.map(entry => (
+                  <FavoriteEntryCard key={entry.id} onClick={() => onSelectEntry(entry)}>
+                    <FavoriteEntryTitle>{entry.title}</FavoriteEntryTitle>
+                    <FavoriteEntryDate>{entry.date.toLocaleDateString()}</FavoriteEntryDate>
+                  </FavoriteEntryCard>
+                ))}
+              </FavoriteEntriesList>
+            ) : (
+              <EmptyFavorites>
+                You haven't marked any entries as favorites yet.
+              </EmptyFavorites>
+            )}
+          </FavoriteEntriesContainer>
+        </LeftColumn>
+
+        <RightColumn>
+          <StreakContainer>
+            <StreakTitle>Activity Calendar</StreakTitle>
+            <StreakValue>{stats.currentStreak} days</StreakValue>
+            <CalendarContainer>
+              <CalendarHeader>
+                <CalendarNavButton onClick={() => handleCalendarNavigation('prev')}>
+                  &lt;
+                </CalendarNavButton>
+                <CalendarControls>
+                  <CalendarMonthYear>
+                    {calendarDate.toLocaleDateString('en-US', { month: 'long' })}
+                  </CalendarMonthYear>
+                  
+                  <StyledDropdownContainer className="year-dropdown-container" onClick={handleDropdownClick}>
+                    <DropdownHeader className={dropdownOpen ? 'open' : ''}>
+                      {calendarDate.getFullYear()}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </DropdownHeader>
+                    
+                    {/* Hidden accessible select for screen readers */}
+                    <HiddenSelect 
+                      value={calendarDate.getFullYear()} 
+                      onChange={(e) => handleYearChange(parseInt(e.target.value))}
+                      aria-label="Select year"
+                    >
+                      {renderYearOptions()}
+                    </HiddenSelect>
+                    
+                    {dropdownOpen && (
+                      <DropdownMenu>
+                        {(() => {
+                          const currentYear = new Date().getFullYear();
+                          const years = [];
+                          
+                          for (let year = currentYear - 5; year <= currentYear; year++) {
+                            years.push(
+                              <MenuItem 
+                                key={year}
+                                active={calendarDate.getFullYear() === year}
+                                onClick={() => handleMenuItemClick(year)}
+                              >
+                                {calendarDate.getFullYear() === year && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>}
+                                {year}
+                              </MenuItem>
+                            );
+                          }
+                          
+                          return years;
+                        })()}
+                      </DropdownMenu>
+                    )}
+                  </StyledDropdownContainer>
+                </CalendarControls>
+                <CalendarNavButton onClick={() => handleCalendarNavigation('next')}>
+                  &gt;
+                </CalendarNavButton>
+              </CalendarHeader>
+              <WeekdayLabels>
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                  <WeekdayLabel key={i}>{day}</WeekdayLabel>
+                ))}
+              </WeekdayLabels>
+              <CalendarGrid ref={calendarGridRef}>
+                {renderCalendarDays()}
+              </CalendarGrid>
+              
+              {/* Entry Preview Popup */}
+              <EntryPreview 
+                visible={previewVisible} 
+                position={previewPosition}
+              >
+                {previewLoading ? (
+                  <PreviewContent>Loading...</PreviewContent>
+                ) : previewEntry ? (
+                  previewEntry.isLocked ? (
+                    <LockedContent>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      This entry is locked
+                    </LockedContent>
+                  ) : (
+                    <>
+                      <PreviewTitle>{previewEntry.title}</PreviewTitle>
+                      <PreviewDate>{new Date(previewEntry.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}</PreviewDate>
+                      <PreviewContent>{previewEntry.content}</PreviewContent>
+                    </>
+                  )
+                ) : null}
+              </EntryPreview>
+            </CalendarContainer>
+          </StreakContainer>
+        </RightColumn>
+      </DesktopLayout>
     </Container>
   );
 };
