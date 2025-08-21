@@ -42,74 +42,88 @@ const EntriesHeader = styled.div`
 
 const SearchSortContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  background-color: ${({ theme }) => theme.headerBackground};
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const SearchInput = styled.input`
   flex: 1;
   min-width: 200px;
-  padding: 0.5rem 0.75rem;
-  border: none;
-  border-radius: 4px;
-  background-color: ${({ theme }) => theme.light};
+  padding: 0.75rem 1rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.cardBackground};
   color: ${({ theme }) => theme.foreground};
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  letter-spacing: 0.01em;
   
   &::placeholder {
     color: ${({ theme }) => theme.secondary};
+    font-style: italic;
   }
   
   &:focus {
     outline: none;
     box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+    border-color: ${({ theme }) => theme.primary};
   }
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    border-color: ${({ theme }) => theme.secondary};
   }
 `;
 
 const SortSelect = styled.select`
-  padding: 0.5rem 0.75rem;
-  border: none;
-  border-radius: 4px;
-  background-color: ${({ theme }) => theme.light};
+  padding: 0.75rem 1rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.cardBackground};
   color: ${({ theme }) => theme.foreground};
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(
+    '#8D6E63'
+  )}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 0.5rem center;
+  background-position: right 0.75rem center;
   background-size: 1em;
-  padding-right: 2rem;
-  transition: background-color 0.2s ease;
+  padding-right: 2.5rem;
+  transition: all 0.3s ease;
+  letter-spacing: 0.01em;
+  font-weight: 500;
   
   &:focus {
     outline: none;
     box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+    border-color: ${({ theme }) => theme.primary};
   }
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    border-color: ${({ theme }) => theme.secondary};
   }
 `;
 
 const SortButton = styled.button<{ active: boolean }>`
-  padding: 0.5rem 0.75rem;
-  background-color: ${({ theme }) => theme.light};
+  padding: 0.75rem 1rem;
+  background-color: ${({ theme }) => theme.cardBackground};
   color: ${({ active, theme }) => active ? theme.primary : theme.secondary};
-  border: none;
-  border-radius: 4px;
+  border: 1px solid ${({ theme, active }) => active ? theme.primary : theme.border};
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 1rem;
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    background-color: ${({ theme, active }) => active ? theme.primary + '10' : theme.light};
+    border-color: ${({ theme, active }) => active ? theme.primary : theme.secondary};
   }
   
   &:focus {
@@ -125,55 +139,92 @@ const Title = styled.h2`
 `;
 
 const NewEntryButton = styled.button`
-  padding: 0.5rem 1.25rem;
-  background-color: ${({ theme }) => theme.primary};
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.primary + 'DD'});
   color: white;
   border: none;
-  border-radius: 4px;
-  font-weight: 500;
+  border-radius: 30px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px ${({ theme }) => theme.primary + '40'};
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px ${({ theme }) => theme.primary + '40'};
+  letter-spacing: 0.02em;
+  font-size: 0.95rem;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.6s ease;
+  }
 
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'ee'};
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px ${({ theme }) => theme.primary + '30'};
+    background: linear-gradient(135deg, ${({ theme }) => theme.primary + 'EE'}, ${({ theme }) => theme.primary});
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px ${({ theme }) => theme.primary + '50'};
+    
+    &::after {
+      left: 100%;
+    }
   }
   
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'}, 0 2px 4px ${({ theme }) => theme.primary + '40'};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.primary + '40'}, 0 4px 10px ${({ theme }) => theme.primary + '40'};
   }
   
   &:active {
     transform: translateY(1px);
-    box-shadow: 0 1px 2px ${({ theme }) => theme.primary + '40'};
+    box-shadow: 0 2px 5px ${({ theme }) => theme.primary + '40'};
   }
 `;
 
 const EntryList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 0.5rem;
 `;
 
 const EntryCard = styled.div`
-  padding: 1rem;
-  border-radius: 8px;
+  padding: 1.25rem;
+  border-radius: 12px;
   background-color: ${({ theme }) => theme.cardBackground};
   box-shadow: ${({ theme }) => theme.cardShadow};
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.border};
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.accent1});
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(93, 64, 55, 0.2);
+    
+    &::before {
+      opacity: 1;
+    }
   }
 `;
 
@@ -194,24 +245,26 @@ const EntryStatusIcon = styled.span`
 `;
 
 const EntryTitle = styled.h3`
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
   color: ${({ theme }) => theme.foreground};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 `;
 
 const EntryDate = styled.span`
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: ${({ theme }) => theme.secondary};
   display: block;
-  margin: 0.25rem 0;
+  margin: 0.35rem 0;
+  font-weight: 500;
 `;
 
 const EntryPreview = styled.p`
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: ${({ theme }) => theme.foreground};
   overflow: hidden;
   text-overflow: ellipsis;
@@ -220,6 +273,8 @@ const EntryPreview = styled.p`
   -webkit-box-orient: vertical;
   margin: 0;
   flex: 1;
+  line-height: 1.5;
+  opacity: 0.9;
 `;
 
 const LoadingMessage = styled.div`

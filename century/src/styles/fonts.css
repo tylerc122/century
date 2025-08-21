@@ -1,0 +1,21 @@
+/* Import Socialhaus font */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+/* We're using Space Grotesk as a stand-in for Socialhaus since it has a similar modern, friendly feel */
+:root {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Override font-family for all elements */
+body, button, input, textarea, select, h1, h2, h3, h4, h5, h6, p, span, div {
+  font-family: 'Space Grotesk', sans-serif;
+}
