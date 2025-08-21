@@ -92,12 +92,8 @@ const StatsTitle = styled.h3`
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  
-  @media (min-width: 500px) {
-    grid-template-columns: repeat(4, 1fr);
-  }
 `;
 
 const StatItem = styled.div`
@@ -189,16 +185,16 @@ const WeekdayLabels = styled.div`
   gap: 8px;
   margin-bottom: 0.5rem;
   width: 100%;
-  justify-items: center;
+  justify-items: stretch;
 `;
 
 const WeekdayLabel = styled.div`
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: ${({ theme }) => theme.secondary};
   font-weight: 600;
   padding: 0.3rem 0;
-  width: 100px;
+  width: 100%;
 `;
 
 const WordStatsContainer = styled.div`
@@ -405,13 +401,13 @@ const StreakValue = styled.div`
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 12px;
   width: 100%;
   margin: 0 auto;
   padding: 0.5rem;
   background-color: ${({ theme }) => theme.light};
   border-radius: 8px;
-  justify-items: center;
+  justify-items: stretch;
   align-items: center;
   overflow-y: auto;
   max-height: 500px;
@@ -423,15 +419,16 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
     if (props.active) return props.theme.primary;
     return props.theme.border;
   }};
-  border-radius: 6px;
-  height: 80px;
-  width: 80px;
+  border-radius: 4px;
+  aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
   border: ${props => props.isEmpty ? 'none' : props.isToday ? `2px solid ${props.theme.dark}` : `1px solid ${props.theme.border}`};
   cursor: ${props => props.isEmpty ? 'default' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: ${props => props.isToday ? '700' : '400'};
   color: ${props => {
     if (props.isEmpty) return 'transparent';
@@ -439,6 +436,8 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
     return props.theme.secondary;
   }};
   position: relative;
+  margin: 0;
+  padding: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   
   &:hover {
@@ -777,10 +776,6 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
               <StatItem>
                 <StatValue>{stats.totalMediaUploaded}</StatValue>
                 <StatLabel>Media Uploaded</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{stats.favoriteEntries.length}</StatValue>
-                <StatLabel>Favorite Entries</StatLabel>
               </StatItem>
             </StatsGrid>
           </StatsContainer>
