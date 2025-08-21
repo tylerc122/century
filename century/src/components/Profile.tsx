@@ -6,18 +6,20 @@ import { DiaryEntry } from '../types';
 // Styled components
 const Container = styled.div`
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  overflow-y: auto;
+  padding: 1.5rem;
   background-color: ${({ theme }) => theme.background};
+  overflow: auto;
 `;
 
 const DesktopLayout = styled.div`
   display: grid;
   grid-template-columns: 300px 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
   width: 100%;
+  height: 100%;
   max-width: 1400px;
   margin: 0 auto;
 
@@ -29,32 +31,35 @@ const DesktopLayout = styled.div`
 const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
+  height: 100%;
+  overflow-y: hidden;
 `;
 
 const RightColumn = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  height: 100%;
+  overflow-y: hidden;
 `;
 
 const ProfileHeader = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 `;
 
 const Avatar = styled.div`
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background-color: ${({ theme }) => theme.light};
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
   color: ${({ theme }) => theme.secondary};
 `;
 
@@ -74,14 +79,14 @@ const StatsContainer = styled.div`
   width: 100%;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const StatsTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   color: ${({ theme }) => theme.foreground};
 `;
 
@@ -126,16 +131,20 @@ const StatLabel = styled.span`
 
 const StreakContainer = styled.div`
   width: 100%;
+  display: flex;
+  flex-direction: column;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
+  overflow: visible;
 `;
 
 const CalendarContainer = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 `;
 
 const CalendarHeader = styled.div`
@@ -175,31 +184,33 @@ const CalendarNavButton = styled.button`
 const WeekdayLabels = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.35rem;
+  gap: 8px;
   margin-bottom: 0.5rem;
   width: 100%;
+  justify-items: center;
 `;
 
 const WeekdayLabel = styled.div`
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: ${({ theme }) => theme.secondary};
   font-weight: 600;
-  padding: 0.25rem 0;
+  padding: 0.3rem 0;
+  width: 100px;
 `;
 
 const WordStatsContainer = styled.div`
   width: 100%;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const WordStatsTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   color: ${({ theme }) => theme.foreground};
 `;
 
@@ -230,16 +241,19 @@ const WordStatsValue = styled.span`
 
 const FavoriteEntriesContainer = styled.div`
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const FavoriteEntriesTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   color: ${({ theme }) => theme.foreground};
 `;
 
@@ -247,6 +261,8 @@ const FavoriteEntriesList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const FavoriteEntryCard = styled.div`
@@ -278,6 +294,10 @@ const EmptyFavorites = styled.div`
   padding: 1rem;
   color: ${({ theme }) => theme.secondary};
   font-size: 0.9rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 // Dropdown components
@@ -363,9 +383,9 @@ const HiddenSelect = styled.select`
 `;
 
 const StreakTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   color: ${({ theme }) => theme.foreground};
@@ -373,49 +393,43 @@ const StreakTitle = styled.h3`
 
 
 const StreakValue = styled.div`
-  font-size: 2rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: ${({ theme }) => theme.foreground};
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: auto;
-  gap: 0.5rem;
+  gap: 8px;
   width: 100%;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.5rem;
   background-color: ${({ theme }) => theme.light};
   border-radius: 8px;
-  
-  @media (min-width: 768px) {
-    gap: 0.6rem;
-  }
-  
-  @media (min-width: 1200px) {
-    gap: 0.75rem;
-  }
+  justify-items: center;
+  align-items: center;
+  overflow-y: auto;
+  max-height: 500px;
 `;
 
 const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean }>`
-  aspect-ratio: 1;
   background-color: ${props => {
     if (props.isEmpty) return 'transparent';
     if (props.active) return props.theme.primary;
     return props.theme.border;
   }};
   border-radius: 8px;
-  min-height: 36px;
-  min-width: 36px;
+  height: 100px;
+  width: 100px;
   border: ${props => props.isEmpty ? 'none' : props.isToday ? `2px solid ${props.theme.dark}` : `1px solid ${props.theme.border}`};
   cursor: ${props => props.isEmpty ? 'default' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 24px;
   font-weight: ${props => props.isToday ? '700' : '400'};
   color: ${props => {
     if (props.isEmpty) return 'transparent';
@@ -427,15 +441,10 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
   
   &:hover {
     ${props => !props.isEmpty && `
-      transform: scale(1.1);
-      z-index: 10;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      opacity: 0.8;
+      transform: scale(1.05);
+      z-index: 5;
     `}
-  }
-  
-  @media (min-width: 1200px) {
-    min-height: 40px;
-    min-width: 40px;
   }
 `;
 
