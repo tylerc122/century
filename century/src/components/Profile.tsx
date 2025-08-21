@@ -263,6 +263,88 @@ const EmptyFavorites = styled.div`
   font-size: 0.9rem;
 `;
 
+// Dropdown components
+const StyledDropdownContainer = styled.div`
+  position: relative;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(93, 64, 55, 0.08);
+  min-width: 120px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+`;
+
+const DropdownHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: ${({ theme }) => theme.foreground};
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: normal;
+  width: 100%;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+  }
+  
+  &.open svg {
+    transform: rotate(180deg);
+  }
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 100%;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+  z-index: 100;
+`;
+
+const MenuItem = styled.div<{ active: boolean }>`
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  background-color: ${({ active }) => active ? `rgba(210, 105, 30, 0.15)` : 'transparent'};
+  font-weight: ${({ active }) => active ? 500 : 400};
+  
+  &:hover {
+    background-color: rgba(210, 105, 30, 0.08);
+  }
+  
+  svg {
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+`;
+
+// Hidden actual select for accessibility
+const HiddenSelect = styled.select`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+`;
+
 const StreakTitle = styled.h3`
   font-size: 1.1rem;
   font-weight: 600;
@@ -349,6 +431,7 @@ const Profile: React.FC = () => {
   const [joinedDate] = useState(mockJoinedDate);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [activityData, setActivityData] = useState<Record<string, boolean>>({});
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -397,7 +480,32 @@ const Profile: React.FC = () => {
       newDate.setFullYear(year);
       return newDate;
     });
+    setDropdownOpen(false);
   };
+  
+  const handleDropdownClick = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+  
+  const handleMenuItemClick = (year: number) => {
+    handleYearChange(year);
+    setDropdownOpen(false);
+  };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.year-dropdown-container')) {
+        setDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   // Generate year options for dropdown
   const renderYearOptions = () => {
@@ -516,21 +624,52 @@ const Profile: React.FC = () => {
             </CalendarNavButton>
             <CalendarControls>
               <CalendarMonthYear>
-                {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                {calendarDate.toLocaleDateString('en-US', { month: 'long' })}
               </CalendarMonthYear>
-              <select 
-                value={calendarDate.getFullYear()} 
-                onChange={(e) => handleYearChange(parseInt(e.target.value))}
-                style={{ 
-                  padding: '4px',
-                  borderRadius: '4px',
-                  border: '1px solid #D7CCC8',
-                  backgroundColor: '#FFF8E1',
-                  color: '#5D4037'
-                }}
-              >
-                {renderYearOptions()}
-              </select>
+              
+              <StyledDropdownContainer className="year-dropdown-container" onClick={handleDropdownClick}>
+                <DropdownHeader className={dropdownOpen ? 'open' : ''}>
+                  {calendarDate.getFullYear()}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </DropdownHeader>
+                
+                {/* Hidden accessible select for screen readers */}
+                <HiddenSelect 
+                  value={calendarDate.getFullYear()} 
+                  onChange={(e) => handleYearChange(parseInt(e.target.value))}
+                  aria-label="Select year"
+                >
+                  {renderYearOptions()}
+                </HiddenSelect>
+                
+                {dropdownOpen && (
+                  <DropdownMenu>
+                    {(() => {
+                      const currentYear = new Date().getFullYear();
+                      const years = [];
+                      
+                      for (let year = currentYear - 5; year <= currentYear; year++) {
+                        years.push(
+                          <MenuItem 
+                            key={year}
+                            active={calendarDate.getFullYear() === year}
+                            onClick={() => handleMenuItemClick(year)}
+                          >
+                            {calendarDate.getFullYear() === year && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>}
+                            {year}
+                          </MenuItem>
+                        );
+                      }
+                      
+                      return years;
+                    })()}
+                  </DropdownMenu>
+                )}
+              </StyledDropdownContainer>
             </CalendarControls>
             <CalendarNavButton onClick={() => handleCalendarNavigation('next')}>
               &gt;

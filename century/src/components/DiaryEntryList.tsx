@@ -407,10 +407,9 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ showEntryForm, setShowE
           onChange={handleSearch}
         />
         
-        <StyledDropdownContainer className="dropdown-container">
+        <StyledDropdownContainer className="dropdown-container" onClick={handleDropdownClick}>
           <DropdownHeader 
             className={dropdownOpen ? 'open' : ''}
-            onClick={handleDropdownClick}
           >
             {sortCriteria.charAt(0).toUpperCase() + sortCriteria.slice(1)}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
