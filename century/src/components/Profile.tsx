@@ -11,7 +11,7 @@ const Container = styled.div`
   flex-direction: column;
   padding: 1.5rem;
   background-color: ${({ theme }) => theme.background};
-  overflow: auto;
+  overflow: hidden;
 `;
 
 const DesktopLayout = styled.div`
@@ -138,6 +138,7 @@ const StreakContainer = styled.div`
   padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
   overflow: visible;
+  flex: 1;
 `;
 
 const CalendarContainer = styled.div`
@@ -145,6 +146,7 @@ const CalendarContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: visible;
+  flex: 1;
 `;
 
 const CalendarHeader = styled.div`
@@ -403,7 +405,7 @@ const StreakValue = styled.div`
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 2px;
   width: 100%;
   margin: 0 auto;
   padding: 0.5rem;
@@ -421,15 +423,15 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
     if (props.active) return props.theme.primary;
     return props.theme.border;
   }};
-  border-radius: 8px;
-  height: 100px;
-  width: 100px;
+  border-radius: 6px;
+  height: 80px;
+  width: 80px;
   border: ${props => props.isEmpty ? 'none' : props.isToday ? `2px solid ${props.theme.dark}` : `1px solid ${props.theme.border}`};
   cursor: ${props => props.isEmpty ? 'default' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: ${props => props.isToday ? '700' : '400'};
   color: ${props => {
     if (props.isEmpty) return 'transparent';
