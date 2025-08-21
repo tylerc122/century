@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import DiaryEntryList from '../components/DiaryEntryList';
 import Profile from '../components/Profile';
+import { DiaryEntry } from '../types';
 
 
 // Styled components
@@ -95,6 +96,12 @@ const NavButton = styled.button<{ active: boolean }>`
 function App() {
   const [activeView, setActiveView] = useState<'entries' | 'profile'>('entries');
   const [showEntryForm, setShowEntryForm] = useState<boolean>(false);
+  const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
+
+  const handleSelectEntry = (entry: DiaryEntry) => {
+    setSelectedEntry(entry);
+    setActiveView('entries');
+  };
 
   return (
     <AppContainer>
@@ -104,8 +111,15 @@ function App() {
       </Header>
 
       <Content>
-        {activeView === 'entries' && <DiaryEntryList showEntryForm={showEntryForm} setShowEntryForm={setShowEntryForm} />}
-        {activeView === 'profile' && <Profile />}
+        {activeView === 'entries' && (
+          <DiaryEntryList 
+            showEntryForm={showEntryForm} 
+            setShowEntryForm={setShowEntryForm}
+            selectedEntry={selectedEntry}
+            setSelectedEntry={setSelectedEntry}
+          />
+        )}
+        {activeView === 'profile' && <Profile onSelectEntry={handleSelectEntry} />}
       </Content>
 
       <Navigation>

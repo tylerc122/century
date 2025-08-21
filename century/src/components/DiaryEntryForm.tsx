@@ -101,9 +101,13 @@ const TextArea = styled.textarea`
 
 const FormActions = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 1rem;
   border-top: 1px solid ${({ theme }) => theme.border};
+`;
+
+const RightActions = styled.div`
+  display: flex;
   gap: 0.5rem;
 `;
 
@@ -131,6 +135,15 @@ const SaveButton = styled(Button)`
   
   &:hover {
     background-color: ${({ theme }) => theme.primary + 'dd'};
+  }
+`;
+
+const DeleteButton = styled(Button)`
+  background-color: ${({ theme }) => theme.error || '#e53935'};
+  color: white;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.error ? theme.error + 'dd' : '#c62828'};
   }
 `;
 
@@ -244,19 +257,32 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const [images, setImages] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (entry) {
       setTitle(entry.title);
       setContent(entry.content);
-      setDate(entry.date.toISOString().split('T')[0]);
+      
+      // Ensure correct date formatting regardless of timezone
+      const entryDate = new Date(entry.date);
+      const year = entryDate.getFullYear();
+      const month = String(entryDate.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+      const day = String(entryDate.getDate()).padStart(2, '0');
+      setDate(`${year}-${month}-${day}`);
+      
       setImages(entry.images || []);
       setIsLocked(entry.isLocked || false);
       setIsFavorite(entry.isFavorite || false);
     } else {
       // Default to today for new entries
-      setDate(new Date().toISOString().split('T')[0]);
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+      const day = String(today.getDate()).padStart(2, '0');
+      setDate(`${year}-${month}-${day}`);
+      
       setIsLocked(false);
       setIsFavorite(false);
     }
@@ -264,10 +290,17 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
 
   const handleSave = async () => {
     try {
+      // Fix timezone issue with more thorough handling
+      // Parse the date parts from the string to construct the date manually
+      const [year, month, day] = date.split('-').map(num => parseInt(num, 10));
+      
+      // Create date with the correct year, month (0-indexed), and day
+      const selectedDate = new Date(year, month - 1, day);
+      
       const entryData: Omit<DiaryEntry, 'id'> & { id?: string } = {
         title,
         content,
-        date: new Date(date),
+        date: selectedDate,
         images,
         isLocked,
         isFavorite
@@ -309,6 +342,17 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const triggerImageUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!entry) return;
+    
+    try {
+      await diaryService.deleteEntry(entry.id);
+      onSave(); // Use the existing onSave to close the form and refresh the list
+    } catch (error) {
+      console.error('Failed to delete diary entry:', error);
     }
   };
 
@@ -403,8 +447,20 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
         </FormContent>
         
         <FormActions>
-          <CancelButton onClick={onCancel}>Cancel</CancelButton>
-          <SaveButton onClick={handleSave}>Save</SaveButton>
+          {entry && (
+            <DeleteButton 
+              onClick={showDeleteConfirm ? handleDelete : () => setShowDeleteConfirm(true)}
+            >
+              {showDeleteConfirm ? 'Confirm Delete' : 'Delete'}
+            </DeleteButton>
+          )}
+          {/* Spacer element for when there's no entry */}
+          {!entry && <div />}
+          
+          <RightActions>
+            <CancelButton onClick={onCancel}>Cancel</CancelButton>
+            <SaveButton onClick={handleSave}>Save</SaveButton>
+          </RightActions>
         </FormActions>
       </FormContainer>
     </Overlay>

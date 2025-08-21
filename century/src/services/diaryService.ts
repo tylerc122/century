@@ -86,6 +86,34 @@ class DiaryStorage {
   
   // Add a new entry
   addEntry(entry: Omit<DiaryEntry, 'id'>): DiaryEntry {
+    // Check if an entry already exists for this date
+    const entryDate = new Date(entry.date);
+    entryDate.setHours(0, 0, 0, 0);
+    
+    const existingEntry = this.entries.find(e => {
+      const eDate = new Date(e.date);
+      eDate.setHours(0, 0, 0, 0);
+      return eDate.getTime() === entryDate.getTime();
+    });
+    
+    // If entry exists for this date, update it instead of adding a new one
+    if (existingEntry) {
+      const updatedEntry: DiaryEntry = {
+        ...entry,
+        id: existingEntry.id,
+        isLocked: entry.isLocked || existingEntry.isLocked || false,
+        isFavorite: entry.isFavorite || existingEntry.isFavorite || false
+      };
+      
+      this.entries = this.entries.map(e => 
+        e.id === existingEntry.id ? updatedEntry : e
+      );
+      
+      this.saveToStorage();
+      return updatedEntry;
+    }
+    
+    // Otherwise, add a new entry
     const newEntry: DiaryEntry = {
       ...entry,
       id: Date.now().toString(),
@@ -262,6 +290,18 @@ export const diaryService = {
   
   getFavoriteEntries: async (): Promise<DiaryEntry[]> => {
     return storage.getFavoriteEntries();
+  },
+  
+  getEntryByDate: async (date: Date): Promise<DiaryEntry | undefined> => {
+    const entries = storage.getAllEntries();
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return entries.find(entry => {
+      const entryDate = new Date(entry.date);
+      entryDate.setHours(0, 0, 0, 0);
+      return entryDate.getTime() === targetDate.getTime();
+    });
   },
   
   addEntry: async (entry: Omit<DiaryEntry, 'id'>): Promise<DiaryEntry> => {

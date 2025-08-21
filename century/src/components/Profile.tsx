@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import diaryService from '../services/diaryService';
 import { DiaryEntry } from '../types';
@@ -402,7 +402,7 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
   &:hover {
     ${props => !props.isEmpty && `
       transform: scale(1.1);
-      z-index: 1;
+      z-index: 10;
     `}
   }
 `;
@@ -413,11 +413,67 @@ const LoadingMessage = styled.div`
   color: ${({ theme }) => theme.secondary};
 `;
 
+const EntryPreview = styled.div<{ visible: boolean; position: { x: number; y: number } }>`
+  position: fixed;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  width: 250px;
+  max-height: 200px;
+  overflow: hidden;
+  z-index: 100;
+  left: ${props => `${props.position.x}px`};
+  top: ${props => `${props.position.y}px`};
+  opacity: ${props => props.visible ? 1 : 0};
+  visibility: ${props => props.visible ? 'visible' : 'hidden'};
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+`;
+
+const PreviewTitle = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: ${({ theme }) => theme.foreground};
+`;
+
+const PreviewDate = styled.div`
+  font-size: 12px;
+  color: ${({ theme }) => theme.secondary};
+  margin-bottom: 8px;
+`;
+
+const PreviewContent = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.foreground};
+  opacity: 0.9;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+`;
+
+const LockedContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: ${({ theme }) => theme.secondary};
+  padding: 10px 0;
+`;
+
 // Mock data for initial state
 const mockJoinedDate = new Date();
 mockJoinedDate.setMonth(mockJoinedDate.getMonth() - 1); // Joined a month ago
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  onSelectEntry: (entry: DiaryEntry) => void;
+}
+
+const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const [stats, setStats] = useState({
     totalEntries: 0,
     totalWords: 0,
@@ -432,6 +488,12 @@ const Profile: React.FC = () => {
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [activityData, setActivityData] = useState<Record<string, boolean>>({});
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [previewVisible, setPreviewVisible] = useState<boolean>(false);
+  const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [previewEntry, setPreviewEntry] = useState<DiaryEntry | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calendarGridRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -532,6 +594,67 @@ const Profile: React.FC = () => {
            date.getFullYear() === today.getFullYear();
   };
   
+  // Handle hover over calendar day
+  const handleDayHover = useCallback(async (date: Date, event: React.MouseEvent) => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+    }
+    
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    
+    // Calculate position for the preview
+    // Position above the day square with a small offset
+    const xPos = rect.left + (rect.width / 2) - 125; // Center the 250px wide preview
+    const yPos = rect.top - 220; // Position above with space for the preview
+    
+    setPreviewPosition({ x: xPos, y: yPos });
+    
+    hoverTimerRef.current = setTimeout(async () => {
+      // Only show preview for days with entries
+      const dateString = date.toISOString().split('T')[0];
+      if (activityData[dateString]) {
+        setPreviewLoading(true);
+        try {
+          const entry = await diaryService.getEntryByDate(date);
+          if (entry) {
+            setPreviewEntry(entry);
+            setPreviewVisible(true);
+          }
+        } catch (error) {
+          console.error('Error fetching entry preview:', error);
+        } finally {
+          setPreviewLoading(false);
+        }
+      }
+    }, 500); // 500ms delay before showing preview
+  }, [activityData]);
+  
+  // Handle mouse leave
+  const handleDayLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setPreviewVisible(false);
+  }, []);
+  
+  // Handle day click - allows viewing the full entry
+  const handleDayClick = useCallback(async (date: Date) => {
+    // Only handle click for days with entries
+    const dateString = date.toISOString().split('T')[0];
+    if (activityData[dateString]) {
+      try {
+        const entry = await diaryService.getEntryByDate(date);
+        if (entry) {
+          // Pass the entry to the parent component to display
+          onSelectEntry(entry);
+        }
+      } catch (error) {
+        console.error('Error fetching full entry:', error);
+      }
+    }
+  }, [activityData, onSelectEntry]);
+  
   // Get days in month for the calendar
   const renderCalendarDays = () => {
     const year = calendarDate.getFullYear();
@@ -565,6 +688,9 @@ const Profile: React.FC = () => {
           active={isActive}
           isToday={todayCheck}
           title={`${date.toLocaleDateString()} ${isActive ? '- Entry added' : ''}`}
+          onMouseEnter={isActive ? (e) => handleDayHover(date, e) : undefined}
+          onMouseLeave={isActive ? handleDayLeave : undefined}
+          onClick={isActive ? () => handleDayClick(date) : undefined}
         >
           {i}
         </CalendarDay>
@@ -680,9 +806,39 @@ const Profile: React.FC = () => {
               <WeekdayLabel key={i}>{day}</WeekdayLabel>
             ))}
           </WeekdayLabels>
-          <CalendarGrid>
+          <CalendarGrid ref={calendarGridRef}>
             {renderCalendarDays()}
           </CalendarGrid>
+          
+          {/* Entry Preview Popup */}
+          <EntryPreview 
+            visible={previewVisible} 
+            position={previewPosition}
+          >
+            {previewLoading ? (
+              <PreviewContent>Loading...</PreviewContent>
+            ) : previewEntry ? (
+              previewEntry.isLocked ? (
+                <LockedContent>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  This entry is locked
+                </LockedContent>
+              ) : (
+                <>
+                  <PreviewTitle>{previewEntry.title}</PreviewTitle>
+                  <PreviewDate>{new Date(previewEntry.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}</PreviewDate>
+                  <PreviewContent>{previewEntry.content}</PreviewContent>
+                </>
+              )
+            ) : null}
+          </EntryPreview>
         </CalendarContainer>
       </StreakContainer>
       

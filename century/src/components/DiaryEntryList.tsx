@@ -299,13 +299,19 @@ const formatDate = (date: Date): string => {
 interface DiaryEntryListProps {
   showEntryForm: boolean;
   setShowEntryForm: (show: boolean) => void;
+  selectedEntry?: DiaryEntry;
+  setSelectedEntry: (entry: DiaryEntry | undefined) => void;
 }
 
-const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ showEntryForm, setShowEntryForm }) => {
+const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ 
+  showEntryForm, 
+  setShowEntryForm, 
+  selectedEntry: propSelectedEntry, 
+  setSelectedEntry 
+}) => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortCriteria, setSortCriteria] = useState<'date' | 'title' | 'favorite'>('date');
   const [sortAscending, setSortAscending] = useState<boolean>(false);
@@ -515,9 +521,9 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ showEntryForm, setShowE
         />
       )}
       
-      {selectedEntry && (
+      {propSelectedEntry && (
         <DiaryEntryForm 
-          entry={selectedEntry}
+          entry={propSelectedEntry}
           onSave={() => {
             setSelectedEntry(undefined);
             loadEntries();
