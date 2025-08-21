@@ -155,16 +155,17 @@ const CalendarNavButton = styled.button`
 const WeekdayLabels = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.25rem;
+  gap: 0.35rem;
   margin-bottom: 0.5rem;
   width: 100%;
 `;
 
 const WeekdayLabel = styled.div`
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: ${({ theme }) => theme.secondary};
   font-weight: 600;
+  padding: 0.25rem 0;
 `;
 
 const WordStatsContainer = styled.div`
@@ -284,27 +285,43 @@ const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: auto;
-  gap: 0.25rem;
+  gap: 0.35rem;
   width: 100%;
   margin: 0 auto;
+  padding: 0.5rem;
+  background-color: ${({ theme }) => theme.light};
+  border-radius: 8px;
 `;
 
-const CalendarDay = styled.div<{ active: boolean; intensity?: number }>`
+const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean }>`
   aspect-ratio: 1;
   background-color: ${props => {
-    if (!props.active) return props.theme.border;
-    // If intensity is provided, we can create different shades based on activity level
-    return props.theme.primary;
+    if (props.isEmpty) return 'transparent';
+    if (props.active) return props.theme.primary;
+    return props.theme.border;
   }};
-  border-radius: 2px;
-  min-height: 22px;
-  min-width: 22px;
-  border: 1px solid ${({ theme }) => theme.border};
-  cursor: pointer;
-  transition: transform 0.1s ease;
+  border-radius: 4px;
+  min-height: 30px;
+  min-width: 30px;
+  border: ${props => props.isEmpty ? 'none' : props.isToday ? `2px solid ${props.theme.dark}` : `1px solid ${props.theme.border}`};
+  cursor: ${props => props.isEmpty ? 'default' : 'pointer'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: ${props => props.isToday ? '700' : '400'};
+  color: ${props => {
+    if (props.isEmpty) return 'transparent';
+    if (props.active) return props.theme.light;
+    return props.theme.secondary;
+  }};
+  position: relative;
   
   &:hover {
-    transform: scale(1.1);
+    ${props => !props.isEmpty && `
+      transform: scale(1.1);
+      z-index: 1;
+    `}
   }
 `;
 
@@ -399,6 +416,14 @@ const Profile: React.FC = () => {
     return years;
   };
   
+  // Check if a date is today
+  const isToday = (date: Date): boolean => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+  
   // Get days in month for the calendar
   const renderCalendarDays = () => {
     const year = calendarDate.getFullYear();
@@ -416,7 +441,7 @@ const Profile: React.FC = () => {
     
     // Add empty spaces for days before the first of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<CalendarDay key={`empty-${i}`} active={false} />);
+      days.push(<CalendarDay key={`empty-${i}`} active={false} isEmpty={true} />);
     }
     
     // Add days of the month
@@ -424,13 +449,17 @@ const Profile: React.FC = () => {
       const date = new Date(year, month, i);
       const dateString = date.toISOString().split('T')[0];
       const isActive = activityData[dateString] || false;
+      const todayCheck = isToday(date);
       
       days.push(
         <CalendarDay 
           key={`day-${i}`} 
           active={isActive}
+          isToday={todayCheck}
           title={`${date.toLocaleDateString()} ${isActive ? '- Entry added' : ''}`}
-        />
+        >
+          {i}
+        </CalendarDay>
       );
     }
     
