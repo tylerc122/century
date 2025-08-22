@@ -4,6 +4,7 @@ import { DiaryEntry } from '../types';
 class DiaryStorage {
   private entries: DiaryEntry[] = [];
   private readonly STORAGE_KEY = 'century_diary_entries';
+  private readonly USER_PROFILE_KEY = 'century_user_profile';
   
   constructor() {
     this.loadFromStorage();
@@ -305,6 +306,12 @@ export interface UserStats {
   favoriteEntries: DiaryEntry[];
 }
 
+// User profile related methods
+export interface UserProfileData {
+  username: string;
+  profilePicture: string | null;
+}
+
 export const diaryService = {
   getAllEntries: async (): Promise<DiaryEntry[]> => {
     return storage.getAllEntries();
@@ -348,6 +355,30 @@ export const diaryService = {
   
   getUserStats: async (): Promise<UserStats> => {
     return storage.getUserStats();
+  },
+
+  // User profile methods
+  getUserProfile: async (): Promise<UserProfileData> => {
+    try {
+      const savedData = localStorage.getItem(storage['USER_PROFILE_KEY']);
+      if (savedData) {
+        return JSON.parse(savedData);
+      }
+      return { username: 'User', profilePicture: null };
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      return { username: 'User', profilePicture: null };
+    }
+  },
+
+  updateUserProfile: async (profile: UserProfileData): Promise<UserProfileData> => {
+    try {
+      localStorage.setItem(storage['USER_PROFILE_KEY'], JSON.stringify(profile));
+      return profile;
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+      return profile;
+    }
   }
 };
 

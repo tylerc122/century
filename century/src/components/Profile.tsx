@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
 import styled from 'styled-components';
 import diaryService, { UserStats } from '../services/diaryService';
 import { DiaryEntry } from '../types';
@@ -50,24 +50,117 @@ const ProfileHeader = styled.div`
   margin-bottom: 1rem;
 `;
 
-const Avatar = styled.div`
-  width: 60px;
-  height: 60px;
+const AvatarContainer = styled.div`
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 0.5rem;
+`;
+
+const Avatar = styled.div<{ hasImage: boolean }>`
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background-color: ${({ theme }) => theme.light};
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
   font-size: 1.8rem;
   color: ${({ theme }) => theme.secondary};
+  overflow: hidden;
+  ${props => props.hasImage && `
+    background-size: cover;
+    background-position: center;
+  `}
+`;
+
+const AvatarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const AvatarEditButton = styled.label`
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: ${({ theme }) => theme.primary};
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+    background-color: ${({ theme }) => theme.dark};
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const HiddenFileInput = styled.input`
+  display: none;
+`;
+
+const UsernameContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  position: relative;
 `;
 
 const Username = styled.h2`
   font-size: 1.5rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
   color: ${({ theme }) => theme.foreground};
+  margin: 0;
+  padding-right: 25px;
+`;
+
+const UsernameInput = styled.input`
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.foreground};
+  background-color: transparent;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin: 0;
+  width: 100%;
+`;
+
+const EditButton = styled.button`
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.secondary};
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: ${({ theme }) => theme.primary};
+  }
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 `;
 
 const JoinedDate = styled.p`
@@ -143,6 +236,7 @@ const CalendarContainer = styled.div`
   flex-direction: column;
   overflow: visible;
   flex: 1;
+  position: relative;
 `;
 
 const CalendarHeader = styled.div`
@@ -471,7 +565,7 @@ const LoadingMessage = styled.div`
 `;
 
 const EntryPreview = styled.div<{ visible: boolean; position: { x: number; y: number } }>`
-  position: fixed;
+  position: absolute;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -480,12 +574,13 @@ const EntryPreview = styled.div<{ visible: boolean; position: { x: number; y: nu
   max-height: 200px;
   overflow: hidden;
   z-index: 100;
-  left: ${props => `${props.position.x}px`};
+  left: 50%;
   top: ${props => `${props.position.y}px`};
   opacity: ${props => props.visible ? 1 : 0};
   visibility: ${props => props.visible ? 'visible' : 'hidden'};
   transition: opacity 0.3s ease, visibility 0.3s ease;
   pointer-events: none;
+  transform: translateX(-50%) translateY(-100%) translateY(-10px);
 `;
 
 const PreviewTitle = styled.div`
@@ -550,13 +645,20 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [previewEntry, setPreviewEntry] = useState<DiaryEntry | null>(null);
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>('User');
+  const [editingUsername, setEditingUsername] = useState<boolean>(false);
+  const [tempUsername, setTempUsername] = useState<string>('');
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarGridRef = useRef<HTMLDivElement | null>(null);
+  const usernameInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const loadStats = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
+        
+        // Load user stats
         const userStats = await diaryService.getUserStats();
         setStats({ ...userStats, retroactiveActivity: userStats.retroactiveActivity || Array(28).fill(false) });
         
@@ -570,14 +672,19 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
           activityMap[dateString] = userStats.activityCalendar[i];
         }
         setActivityData(activityMap);
+        
+        // Load user profile data
+        const profileData = await diaryService.getUserProfile();
+        setUsername(profileData.username);
+        setProfilePicture(profileData.profilePicture);
       } catch (error) {
-        console.error('Failed to load stats:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadStats();
+    loadData();
   }, []);
   
   // Handle calendar navigation
@@ -619,13 +726,25 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       if (!target.closest('.year-dropdown-container')) {
         setDropdownOpen(false);
       }
+      
+      // Also close username edit mode if clicking outside
+      if (editingUsername && !target.closest('.username-edit-container')) {
+        handleSaveUsername();
+      }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [editingUsername]);
+  
+  // Focus input when editing username
+  useEffect(() => {
+    if (editingUsername && usernameInputRef.current) {
+      usernameInputRef.current.focus();
+    }
+  }, [editingUsername]);
   
   // Generate year options for dropdown
   const renderYearOptions = () => {
@@ -661,11 +780,10 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     
     // Calculate position for the preview
-    // Position above the day square with a small offset
-    const xPos = rect.left + (rect.width / 2) - 125; // Center the 250px wide preview
-    const yPos = rect.top - 220; // Position above with space for the preview
+    // Position directly above the day square
+    const yPos = rect.top; // Base position at the top of the card (transform will move it above)
     
-    setPreviewPosition({ x: xPos, y: yPos });
+    setPreviewPosition({ x: 0, y: yPos }); // x position is ignored, using 50% left + transform translateX(-50%)
     
     hoverTimerRef.current = setTimeout(async () => {
       // Only show preview for days with entries
@@ -770,6 +888,46 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
     return days;
   };
 
+  // Handle username editing
+  const handleEditUsername = () => {
+    setTempUsername(username);
+    setEditingUsername(true);
+  };
+  
+  const handleSaveUsername = async () => {
+    if (tempUsername.trim() && tempUsername !== username) {
+      setUsername(tempUsername.trim());
+      // Save to storage
+      await diaryService.updateUserProfile({
+        username: tempUsername.trim(),
+        profilePicture
+      });
+    }
+    setEditingUsername(false);
+  };
+  
+  // Handle profile picture change
+  const handleProfilePictureChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        if (e.target?.result) {
+          const imageDataUrl = e.target.result.toString();
+          setProfilePicture(imageDataUrl);
+          // Save to storage
+          await diaryService.updateUserProfile({
+            username,
+            profilePicture: imageDataUrl
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (isLoading) {
     return <LoadingMessage>Loading profile data...</LoadingMessage>;
   }
@@ -779,8 +937,59 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       <DesktopLayout>
         <LeftColumn>
           <ProfileHeader>
-            <Avatar>U</Avatar>
-            <Username>User</Username>
+            <AvatarContainer>
+              <Avatar hasImage={!!profilePicture}>
+                {profilePicture ? (
+                  <AvatarImage src={profilePicture} alt={username} />
+                ) : (
+                  username.charAt(0).toUpperCase()
+                )}
+              </Avatar>
+              <AvatarEditButton htmlFor="profile-picture-upload">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                  <circle cx="12" cy="14" r="4"></circle>
+                </svg>
+              </AvatarEditButton>
+              <HiddenFileInput 
+                id="profile-picture-upload" 
+                type="file" 
+                accept="image/*"
+                onChange={handleProfilePictureChange}
+              />
+            </AvatarContainer>
+            
+            <UsernameContainer className="username-edit-container">
+              {editingUsername ? (
+                <UsernameInput 
+                  ref={usernameInputRef}
+                  type="text" 
+                  value={tempUsername}
+                  onChange={(e) => setTempUsername(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveUsername()}
+                  maxLength={20}
+                />
+              ) : (
+                <Username>{username}</Username>
+              )}
+              <EditButton 
+                onClick={editingUsername ? handleSaveUsername : handleEditUsername}
+                aria-label={editingUsername ? "Save username" : "Edit username"}
+              >
+                {editingUsername ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                )}
+              </EditButton>
+            </UsernameContainer>
+            
             <JoinedDate>
               Joined {joinedDate.toLocaleDateString('en-US', { 
                 year: 'numeric', 
