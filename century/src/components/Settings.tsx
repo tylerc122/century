@@ -125,10 +125,32 @@ const DropdownMenu = styled.div`
   width: 100%;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 300px; /* Limit height and make scrollable */
   border: 1px solid ${({ theme }) => theme.border};
   box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
   z-index: 100;
+  
+  /* Styled scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.cardBackground};
+    border-radius: 0 8px 8px 0;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.border};
+    border-radius: 3px;
+  }
+  
+  /* Make dropdown position smarter when near the bottom of the screen */
+  &.position-top {
+    bottom: calc(100% + 5px);
+    top: auto;
+  }
 `;
 
 const MenuItem = styled.div<{ active: boolean }>`
@@ -286,6 +308,18 @@ const Settings: React.FC<SettingsProps> = () => {
   const [fontSizeDropdownOpen, setFontSizeDropdownOpen] = useState(false);
   const [fontFamilyDropdownOpen, setFontFamilyDropdownOpen] = useState(false);
   
+  // References for dropdown position calculation
+  const themeDropdownRef = React.useRef<HTMLDivElement>(null);
+  const fontSizeDropdownRef = React.useRef<HTMLDivElement>(null);
+  const fontFamilyDropdownRef = React.useRef<HTMLDivElement>(null);
+  
+  // State to track dropdown positioning
+  const [positionDropdownsUp, setPositionDropdownsUp] = useState({
+    theme: false,
+    fontSize: false,
+    fontFamily: false
+  });
+  
   // State for modals/dialogs
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -400,6 +434,41 @@ const Settings: React.FC<SettingsProps> = () => {
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTheme = e.target.value;
     applyTheme(newTheme);
+  };
+  
+  // Calculate dropdown position before opening
+  const calculateDropdownPosition = (
+    ref: React.RefObject<HTMLDivElement | null>, 
+    dropdownType: 'theme' | 'fontSize' | 'fontFamily'
+  ) => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // If space below is less than 300px (our max-height), position upward
+      const shouldPositionUp = spaceBelow < 300;
+      
+      setPositionDropdownsUp(prev => ({
+        ...prev,
+        [dropdownType]: shouldPositionUp
+      }));
+      
+      return shouldPositionUp;
+    }
+    return false;
+  };
+
+  // Toggle dropdown with position calculation
+  const toggleDropdown = (
+    dropdownType: 'theme' | 'fontSize' | 'fontFamily',
+    ref: React.RefObject<HTMLDivElement | null>,
+    currentState: boolean,
+    setStateFn: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    // If opening the dropdown, calculate position
+    if (!currentState) {
+      calculateDropdownPosition(ref, dropdownType);
+    }
+    setStateFn(!currentState);
   };
   
   // Handle direct theme selection from dropdown
@@ -596,7 +665,11 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Change the color theme of the application</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <StyledDropdownContainer className="theme-dropdown" onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}>
+            <StyledDropdownContainer 
+              className="theme-dropdown" 
+              ref={themeDropdownRef}
+              onClick={() => toggleDropdown('theme', themeDropdownRef, themeDropdownOpen, setThemeDropdownOpen)}
+            >
               <DropdownHeader className={themeDropdownOpen ? 'open' : ''}>
                 {AVAILABLE_THEMES.find(t => t.value === themeName)?.label || 'Select Theme'}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -616,7 +689,7 @@ const Settings: React.FC<SettingsProps> = () => {
               </HiddenSelect>
               
               {themeDropdownOpen && (
-                <DropdownMenu>
+                <DropdownMenu className={positionDropdownsUp.theme ? 'position-top' : ''}>
                   {AVAILABLE_THEMES.map(theme => (
                     <MenuItem 
                       key={theme.value}
@@ -641,7 +714,11 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Adjust the size of text throughout the app</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <StyledDropdownContainer className="fontsize-dropdown" onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}>
+            <StyledDropdownContainer 
+              className="fontsize-dropdown" 
+              ref={fontSizeDropdownRef}
+              onClick={() => toggleDropdown('fontSize', fontSizeDropdownRef, fontSizeDropdownOpen, setFontSizeDropdownOpen)}
+            >
               <DropdownHeader className={fontSizeDropdownOpen ? 'open' : ''}>
                 {FONT_SIZES.find(f => f.value === fontSize)?.label || 'Select Size'}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -661,7 +738,7 @@ const Settings: React.FC<SettingsProps> = () => {
               </HiddenSelect>
               
               {fontSizeDropdownOpen && (
-                <DropdownMenu>
+                <DropdownMenu className={positionDropdownsUp.fontSize ? 'position-top' : ''}>
                   {FONT_SIZES.map(size => (
                     <MenuItem 
                       key={size.value}
@@ -686,7 +763,11 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Choose your preferred font style</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <StyledDropdownContainer className="fontfamily-dropdown" onClick={() => setFontFamilyDropdownOpen(!fontFamilyDropdownOpen)}>
+            <StyledDropdownContainer 
+              className="fontfamily-dropdown" 
+              ref={fontFamilyDropdownRef}
+              onClick={() => toggleDropdown('fontFamily', fontFamilyDropdownRef, fontFamilyDropdownOpen, setFontFamilyDropdownOpen)}
+            >
               <DropdownHeader className={fontFamilyDropdownOpen ? 'open' : ''}>
                 {FONT_FAMILIES.find(f => f.value === fontFamily)?.label || 'Select Font'}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -706,7 +787,7 @@ const Settings: React.FC<SettingsProps> = () => {
               </HiddenSelect>
               
               {fontFamilyDropdownOpen && (
-                <DropdownMenu>
+                <DropdownMenu className={positionDropdownsUp.fontFamily ? 'position-top' : ''}>
                   {FONT_FAMILIES.map(font => (
                     <MenuItem 
                       key={font.value}
