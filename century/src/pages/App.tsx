@@ -107,7 +107,10 @@ function App() {
     <AppContainer>
       <Header>
         <Title>century</Title>
-        <NewEntryButton onClick={() => setActiveView('entry')}>+</NewEntryButton>
+        <NewEntryButton onClick={() => {
+          setSelectedEntry(undefined);
+          setActiveView('entry');
+        }}>+</NewEntryButton>
       </Header>
 
       <Content>
@@ -136,28 +139,22 @@ function App() {
         )}
       </Content>
 
-      <Navigation>
-        <NavButton 
-          active={activeView === 'entries'} 
-          onClick={() => setActiveView('entries')}
-        >
-          Entries
-        </NavButton>
-        {activeView === 'entry' && (
+      {activeView !== 'entry' && (
+        <Navigation>
           <NavButton 
-            active={true} 
-            onClick={() => {}}
+            active={activeView === 'entries'} 
+            onClick={() => setActiveView('entries')}
           >
-            {selectedEntry ? 'Edit Entry' : 'New Entry'}
+            Entries
           </NavButton>
-        )}
-        <NavButton 
-          active={activeView === 'profile'} 
-          onClick={() => setActiveView('profile')}
-        >
-          Profile
-        </NavButton>
-      </Navigation>
+          <NavButton 
+            active={activeView === 'profile'} 
+            onClick={() => setActiveView('profile')}
+          >
+            Profile
+          </NavButton>
+        </Navigation>
+      )}
     </AppContainer>
   );
 }
