@@ -292,7 +292,12 @@ const AVAILABLE_THEMES = [
   { label: 'Dark', value: 'dark' },
   { label: 'Light', value: 'light' },
   { label: 'Sepia', value: 'sepia' },
-  { label: 'Navy', value: 'navy' }
+  { label: 'Navy', value: 'navy' },
+  { label: 'Forest', value: 'forest' },
+  { label: 'Sunset', value: 'sunset' },
+  { label: 'Ocean', value: 'ocean' },
+  { label: 'Monochrome', value: 'monochrome' },
+  { label: 'High Contrast', value: 'highcontrast' }
 ];
 
 const Settings: React.FC<SettingsProps> = () => {

@@ -102,6 +102,106 @@ const themes = {
     navBackground: '#1F2F3F', // Nav background
     accent1: '#D65353', // Red accent
     accent2: '#5CAD85', // Green accent
+  },
+  // Forest theme
+  forest: {
+    background: '#1E2C1E', // Dark green background
+    foreground: '#E8F0E8', // Light text
+    primary: '#4B7A47', // Forest green primary
+    secondary: '#85A483', // Medium green
+    success: '#68BB59', // Bright green
+    danger: '#D65353', // Red
+    warning: '#E5C13D', // Yellow
+    info: '#5B9CA5', // Teal blue
+    light: '#2A3D2A', // Lighter forest green
+    dark: '#0F1A0F', // Darker forest green
+    border: '#345634', // Forest green border
+    cardBackground: '#2A3D2A', // Card background
+    cardShadow: '0 2px 8px rgba(15, 26, 15, 0.3)', // Shadow
+    headerBackground: '#243324', // Header background
+    navBackground: '#243324', // Nav background
+    accent1: '#FF7043', // Orange accent
+    accent2: '#81C784', // Light green accent
+  },
+  // Sunset theme
+  sunset: {
+    background: '#2C1E26', // Deep purple background
+    foreground: '#F8E9E2', // Light text
+    primary: '#FF7043', // Orange primary
+    secondary: '#C17A6C', // Dusty rose
+    success: '#5CAD85', // Green
+    danger: '#D65353', // Red
+    warning: '#FFAB40', // Amber
+    info: '#7986CB', // Purple blue
+    light: '#3A2732', // Lighter sunset
+    dark: '#1E1419', // Darker sunset
+    border: '#4A3540', // Purple border
+    cardBackground: '#3A2732', // Card background
+    cardShadow: '0 2px 8px rgba(30, 20, 25, 0.3)', // Shadow
+    headerBackground: '#31222B', // Header background
+    navBackground: '#31222B', // Nav background
+    accent1: '#FF9E80', // Light orange accent
+    accent2: '#B39DDB', // Light purple accent
+  },
+  // Ocean theme
+  ocean: {
+    background: '#1A2E3B', // Deep blue background
+    foreground: '#E4EEF2', // Light text
+    primary: '#4FC3F7', // Sky blue primary
+    secondary: '#81ABBC', // Medium blue
+    success: '#4DB6AC', // Teal
+    danger: '#E57373', // Red
+    warning: '#FFD54F', // Yellow
+    info: '#64B5F6', // Blue
+    light: '#263E4E', // Lighter ocean
+    dark: '#0F1C25', // Darker ocean
+    border: '#2C4A5E', // Ocean border
+    cardBackground: '#263E4E', // Card background
+    cardShadow: '0 2px 8px rgba(15, 28, 37, 0.3)', // Shadow
+    headerBackground: '#1F3441', // Header background
+    navBackground: '#1F3441', // Nav background
+    accent1: '#FF8A65', // Coral accent
+    accent2: '#80DEEA', // Light cyan accent
+  },
+  // Monochrome theme
+  monochrome: {
+    background: '#1A1A1A', // Dark gray background
+    foreground: '#E6E6E6', // Light text
+    primary: '#999999', // Medium gray primary
+    secondary: '#777777', // Medium dark gray
+    success: '#AAAAAA', // Light gray
+    danger: '#666666', // Dark gray
+    warning: '#888888', // Gray
+    info: '#AAAAAA', // Light gray
+    light: '#2A2A2A', // Lighter gray
+    dark: '#0F0F0F', // Darker gray
+    border: '#444444', // Gray border
+    cardBackground: '#2A2A2A', // Card background
+    cardShadow: '0 2px 8px rgba(0, 0, 0, 0.3)', // Shadow
+    headerBackground: '#222222', // Header background
+    navBackground: '#222222', // Nav background
+    accent1: '#CCCCCC', // Light gray accent
+    accent2: '#555555', // Dark gray accent
+  },
+  // High Contrast theme
+  highcontrast: {
+    background: '#000000', // Black background
+    foreground: '#FFFFFF', // White text
+    primary: '#FFCC00', // Bright yellow primary
+    secondary: '#00CCFF', // Bright blue
+    success: '#00FF00', // Bright green
+    danger: '#FF0000', // Bright red
+    warning: '#FF9900', // Orange
+    info: '#00CCFF', // Bright blue
+    light: '#333333', // Dark gray
+    dark: '#000000', // Black
+    border: '#FFFFFF', // White border
+    cardBackground: '#1A1A1A', // Very dark gray
+    cardShadow: '0 2px 8px rgba(255, 255, 255, 0.2)', // White shadow
+    headerBackground: '#000000', // Black background
+    navBackground: '#000000', // Black background
+    accent1: '#FF00FF', // Magenta accent
+    accent2: '#00FFFF', // Cyan accent
   }
 };
 

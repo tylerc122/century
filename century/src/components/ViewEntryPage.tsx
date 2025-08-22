@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
 import diaryService from '../services/diaryService';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface ViewEntryPageProps {
   entry: DiaryEntry;
@@ -192,6 +193,13 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
   };
   return (
     <PageContainer>
+      <DeleteConfirmationModal
+        isVisible={showDeleteConfirm}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+        title="Delete Entry"
+        message="Are you sure you want to delete this entry? This action cannot be undone."
+      />
       <PageHeader>
         <PageTitle>
           {entry.isRetroactive && (
@@ -203,11 +211,7 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
         </PageTitle>
         <ActionButtons>
           <CloseButton onClick={onClose}>Close</CloseButton>
-          {showDeleteConfirm ? (
-            <DeleteButton onClick={handleDelete}>Confirm Delete</DeleteButton>
-          ) : (
-            <DeleteButton onClick={() => setShowDeleteConfirm(true)}>Delete</DeleteButton>
-          )}
+          <DeleteButton onClick={() => setShowDeleteConfirm(true)}>Delete</DeleteButton>
           <EditButton 
             onClick={handleEditClick} 
             disabled={!isEditable}
