@@ -172,12 +172,14 @@ const ImagePreviewContainer = styled.div`
   margin-top: 1rem;
 `;
 
-const ImagePreview = styled.div`
+const ImagePreview = styled.div<{ isCover?: boolean }>`
   position: relative;
   width: 100px;
   height: 100px;
   border-radius: 4px;
   overflow: hidden;
+  border: ${({ isCover }) => isCover ? '2px solid #f0b979' : 'none'};
+  box-shadow: ${({ isCover }) => isCover ? '0 0 8px rgba(240, 185, 121, 0.6)' : 'none'};
 `;
 
 const Image = styled.img`
@@ -204,6 +206,52 @@ const RemoveImageButton = styled.button`
   &:hover {
     background-color: rgba(0, 0, 0, 0.7);
   }
+`;
+
+const ImageActionButtons = styled.div`
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  
+  ${ImagePreview}:hover & {
+    opacity: 1;
+  }
+`;
+
+const ImageActionButton = styled.button`
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+`;
+
+const CoverBadge = styled.div`
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: rgba(240, 185, 121, 0.85);
+  color: white;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 10px;
+  font-weight: bold;
 `;
 
 const ToggleGroup = styled.div`
@@ -342,6 +390,33 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const handleRemoveImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
+  
+  const handleSetCoverImage = (index: number) => {
+    setImages(prev => {
+      // Remove the selected image
+      const selectedImage = prev[index];
+      const filteredImages = prev.filter((_, i) => i !== index);
+      
+      // Add it back at the beginning
+      return [selectedImage, ...filteredImages];
+    });
+  };
+  
+  const handleMoveImage = (index: number, direction: 'left' | 'right') => {
+    setImages(prev => {
+      const newImages = [...prev];
+      
+      if (direction === 'left' && index > 0) {
+        // Swap with previous image
+        [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
+      } else if (direction === 'right' && index < newImages.length - 1) {
+        // Swap with next image
+        [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+      }
+      
+      return newImages;
+    });
+  };
 
   const triggerImageUpload = () => {
     if (fileInputRef.current) {
@@ -423,9 +498,15 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
             {images.length > 0 && (
               <ImagePreviewContainer>
                 {images.map((image, index) => (
-                  <ImagePreview key={index}>
+                  <ImagePreview key={index} isCover={index === 0}>
                     <Image src={image} alt={`Image ${index + 1}`} />
+                    {index === 0 && <CoverBadge>Cover</CoverBadge>}
                     <RemoveImageButton onClick={() => handleRemoveImage(index)}>×</RemoveImageButton>
+                    <ImageActionButtons>
+                      {index > 0 && <ImageActionButton onClick={() => handleMoveImage(index, 'left')}>&larr;</ImageActionButton>}
+                      {index > 0 && <ImageActionButton onClick={() => handleSetCoverImage(index)}>★</ImageActionButton>}
+                      {index < images.length - 1 && <ImageActionButton onClick={() => handleMoveImage(index, 'right')}>&rarr;</ImageActionButton>}
+                    </ImageActionButtons>
                   </ImagePreview>
                 ))}
               </ImagePreviewContainer>

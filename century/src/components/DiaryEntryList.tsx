@@ -270,16 +270,85 @@ const EntryImagePreview = styled.div`
   position: relative;
   background-color: ${({ theme }) => theme.background};
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
 `;
 
-const EntryImage = styled.img<{ isLocked?: boolean }>`
-  width: 100%;
-  height: 100%;
+const EntryImage = styled.img<{ 
+  isLocked?: boolean; 
+  gridPosition?: 'full' | 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' 
+}>`
   object-fit: cover;
   filter: ${({ isLocked }) => isLocked ? 'blur(10px)' : 'none'};
   transition: filter 0.3s ease;
+  position: absolute;
+  
+  /* Full image (1 image) */
+  ${({ gridPosition }) => gridPosition === 'full' && `
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  `}
+  
+  /* Half split (2 images) */
+  ${({ gridPosition }) => gridPosition === 'left' && `
+    width: 50%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'right' && `
+    width: 50%;
+    height: 100%;
+    top: 0;
+    left: 50%;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'top' && `
+    width: 100%;
+    height: 50%;
+    top: 0;
+    left: 0;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'bottom' && `
+    width: 100%;
+    height: 50%;
+    top: 50%;
+    left: 0;
+  `}
+  
+  /* Quarter grid (3-4 images) */
+  ${({ gridPosition }) => gridPosition === 'top-left' && `
+    width: 50%;
+    height: 50%;
+    top: 0;
+    left: 0;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'top-right' && `
+    width: 50%;
+    height: 50%;
+    top: 0;
+    left: 50%;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'bottom-left' && `
+    width: 50%;
+    height: 50%;
+    top: 50%;
+    left: 0;
+  `}
+  
+  ${({ gridPosition }) => gridPosition === 'bottom-right' && `
+    width: 50%;
+    height: 50%;
+    top: 50%;
+    left: 50%;
+  `}
 `;
 
 const MultipleImagesIndicator = styled.div`
@@ -527,13 +596,95 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               >
                 {entry.images && entry.images.length > 0 && (
                   <EntryImagePreview>
-                    <EntryImage 
-                      src={entry.images[0]} 
-                      alt="" 
-                      isLocked={entry.isLocked}
-                    />
-                    {entry.images.length > 1 && !entry.isLocked && (
-                      <MultipleImagesIndicator>+{entry.images.length - 1}</MultipleImagesIndicator>
+                    {entry.isLocked ? (
+                      // Locked entries show just the blurred cover image
+                      <>
+                        <EntryImage 
+                          src={entry.images[0]} 
+                          alt="" 
+                          isLocked={true}
+                          gridPosition="full"
+                        />
+                        {entry.images.length > 1 && (
+                          <MultipleImagesIndicator>+{entry.images.length - 1}</MultipleImagesIndicator>
+                        )}
+                      </>
+                    ) : entry.images.length === 1 ? (
+                      // Single image display
+                      <EntryImage 
+                        src={entry.images[0]} 
+                        alt="" 
+                        gridPosition="full"
+                      />
+                    ) : entry.images.length === 2 ? (
+                      // Two images - side by side layout
+                      <>
+                        <EntryImage 
+                          key={0}
+                          src={entry.images[0]} 
+                          alt="" 
+                          gridPosition="left"
+                        />
+                        <EntryImage 
+                          key={1}
+                          src={entry.images[1]} 
+                          alt="" 
+                          gridPosition="right"
+                        />
+                      </>
+                    ) : entry.images.length === 3 ? (
+                      // Three images - one large left, two stacked right
+                      <>
+                        <EntryImage 
+                          key={0}
+                          src={entry.images[0]} 
+                          alt="" 
+                          gridPosition="left"
+                        />
+                        <EntryImage 
+                          key={1}
+                          src={entry.images[1]} 
+                          alt="" 
+                          gridPosition="top-right"
+                        />
+                        <EntryImage 
+                          key={2}
+                          src={entry.images[2]} 
+                          alt="" 
+                          gridPosition="bottom-right"
+                        />
+                      </>
+                    ) : (
+                      // Four or more images - 2x2 grid with optional indicator
+                      <>
+                        <EntryImage 
+                          key={0}
+                          src={entry.images[0]} 
+                          alt="" 
+                          gridPosition="top-left"
+                        />
+                        <EntryImage 
+                          key={1}
+                          src={entry.images[1]} 
+                          alt="" 
+                          gridPosition="top-right"
+                        />
+                        <EntryImage 
+                          key={2}
+                          src={entry.images[2]} 
+                          alt="" 
+                          gridPosition="bottom-left"
+                        />
+                        <EntryImage 
+                          key={3}
+                          src={entry.images[3]} 
+                          alt="" 
+                          gridPosition="bottom-right"
+                        />
+                        {entry.images.length > 4 && (
+                          <MultipleImagesIndicator>+{entry.images.length - 4}</MultipleImagesIndicator>
+                        )}
+                      </>
                     )}
                   </EntryImagePreview>
                 )}
