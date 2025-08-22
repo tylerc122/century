@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
+import { isEntryFromToday } from '../utils/dateUtils';
 
 interface EntryPageProps {
   entry?: DiaryEntry;
@@ -129,7 +130,33 @@ const Input = styled.input`
   }
 `;
 
-const TitleInput = styled(Input)`
+const WarningBanner = styled.div`
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const WarningText = styled.span`
+  flex: 1;
+`;
+
+const CloseWarningButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #721c24;
+  padding: 0 0 0 1rem;
+  line-height: 1;
+`;
+
+const TitleInput = styled(Input)<{ disabled?: boolean }>`
   font-size: 1.5rem;
   padding: 1rem 0;
   border: none;
@@ -144,7 +171,7 @@ const TitleInput = styled(Input)`
   }
 `;
 
-const TextArea = styled.textarea`
+const TextArea = styled.textarea<{ disabled?: boolean }>`
   width: 100%;
   min-height: calc(100vh - 300px);
   padding: 1rem 0;
@@ -286,6 +313,8 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [canEdit, setCanEdit] = useState(true);
+  const [showEditWarning, setShowEditWarning] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -303,6 +332,11 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
       setImages(entry.images || []);
       setIsLocked(entry.isLocked || false);
       setIsFavorite(entry.isFavorite || false);
+      
+      // Check if entry is from today to enable editing
+      const isToday = isEntryFromToday(entry);
+      setCanEdit(isToday || !entry.id);
+      setShowEditWarning(!isToday && !!entry.id);
     } else {
       // Default to today for new entries
       const today = new Date();
@@ -317,6 +351,11 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
   }, [entry]);
 
   const handleSave = async () => {
+    // Only allow saving if it's a new entry or today's entry
+    if (entry?.id && !canEdit) {
+      alert('Only today\'s entries can be edited.');
+      return;
+    }
     try {
       const [year, month, day] = date.split('-').map(num => parseInt(num, 10));
       const selectedDate = new Date(year, month - 1, day);
@@ -413,18 +452,34 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
       
       <EditorContainer>
         <EditorContent>
+          {showEditWarning && (
+            <WarningBanner>
+              <WarningText>
+                <strong>Notice:</strong> This entry is from a past date and cannot be edited.
+                Only today's entries can be modified.
+              </WarningText>
+              <CloseWarningButton onClick={() => setShowEditWarning(false)}>
+                ×
+              </CloseWarningButton>
+            </WarningBanner>
+          )}
+          
           <TitleInput 
             type="text" 
             placeholder="Entry title" 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
+            disabled={!canEdit}
+            readOnly={!canEdit}
           />
           
           <TextArea 
             placeholder="Write your thoughts..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            disabled={!canEdit}
+            readOnly={!canEdit}
           />
         </EditorContent>
         

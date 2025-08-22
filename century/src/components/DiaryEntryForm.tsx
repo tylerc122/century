@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
+import { isEntryFromToday } from '../utils/dateUtils';
 
 interface DiaryEntryFormProps {
   entry?: DiaryEntry;
@@ -33,6 +34,32 @@ const FormContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+`;
+
+const WarningBanner = styled.div`
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const WarningText = styled.span`
+  flex: 1;
+`;
+
+const CloseWarningButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #721c24;
+  padding: 0 0 0 1rem;
+  line-height: 1;
 `;
 
 const FormHeader = styled.div`
@@ -67,7 +94,7 @@ const Label = styled.label`
   color: ${({ theme }) => theme.foreground};
 `;
 
-const Input = styled.input`
+const Input = styled.input<{ disabled?: boolean }>`
   width: 100%;
   padding: 0.75rem;
   border: 1px solid ${({ theme }) => theme.border};
@@ -82,7 +109,7 @@ const Input = styled.input`
   }
 `;
 
-const TextArea = styled.textarea`
+const TextArea = styled.textarea<{ disabled?: boolean }>`
   width: 100%;
   padding: 0.75rem;
   border: 1px solid ${({ theme }) => theme.border};
@@ -306,6 +333,8 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [canEdit, setCanEdit] = useState(true);
+  const [showEditWarning, setShowEditWarning] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -323,6 +352,11 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
       setImages(entry.images || []);
       setIsLocked(entry.isLocked || false);
       setIsFavorite(entry.isFavorite || false);
+      
+      // Check if entry is from today to enable editing
+      const isToday = isEntryFromToday(entry);
+      setCanEdit(isToday || !entry.id);
+      setShowEditWarning(!isToday && !!entry.id);
     } else {
       // Default to today for new entries
       const today = new Date();
@@ -337,6 +371,11 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   }, [entry]);
 
   const handleSave = async () => {
+    // Only allow saving if it's a new entry or today's entry
+    if (entry?.id && !canEdit) {
+      alert('Only today\'s entries can be edited.');
+      return;
+    }
     try {
       // Fix timezone issue with more thorough handling
       // Parse the date parts from the string to construct the date manually
@@ -450,13 +489,25 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
         </FormHeader>
         
         <FormContent>
+          {showEditWarning && (
+            <WarningBanner>
+              <WarningText>
+                <strong>Notice:</strong> This entry is from a past date and cannot be edited.
+                Only today's entries can be modified.
+              </WarningText>
+              <CloseWarningButton onClick={() => setShowEditWarning(false)}>
+                ×
+              </CloseWarningButton>
+            </WarningBanner>
+          )}
           <FormGroup>
             <Label htmlFor="date">Date</Label>
             <Input 
               type="date" 
               id="date" 
               value={date} 
-              onChange={(e) => setDate(e.target.value)} 
+              onChange={(e) => setDate(e.target.value)}
+              disabled={!canEdit} 
             />
           </FormGroup>
           
@@ -468,6 +519,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
               placeholder="Entry title" 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={!canEdit}
             />
           </FormGroup>
           
@@ -478,6 +530,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
               placeholder="Write your thoughts..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              disabled={!canEdit}
             />
           </FormGroup>
           

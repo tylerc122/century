@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
+import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
 
 interface ViewEntryPageProps {
   entry: DiaryEntry;
@@ -61,12 +62,14 @@ const CloseButton = styled(Button)`
   }
 `;
 
-const EditButton = styled(Button)`
-  background-color: ${({ theme }) => theme.primary};
-  color: white;
+const EditButton = styled(Button)<{ disabled?: boolean }>`
+  background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary};
+  color: ${({ disabled }) => disabled ? '#999' : 'white'};
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
   
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
+    background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary + 'dd'};
   }
 `;
 
@@ -147,17 +150,24 @@ const Image = styled.img`
   display: block;
 `;
 
-// Helper function to format dates
+// Use the utility function for formatting dates
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  return formatDateUtil(date, 'long');
 };
 
 const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit }) => {
+  const isEditable = isEntryFromToday(entry);
+  const [showNonEditableMessage, setShowNonEditableMessage] = useState(false);
+  
+  const handleEditClick = () => {
+    if (!isEditable) {
+      setShowNonEditableMessage(true);
+      setTimeout(() => setShowNonEditableMessage(false), 3000);
+      return;
+    }
+    
+    onEdit(entry);
+  };
   return (
     <PageContainer>
       <PageHeader>
@@ -171,8 +181,30 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
         </PageTitle>
         <ActionButtons>
           <CloseButton onClick={onClose}>Close</CloseButton>
-          <EditButton onClick={() => onEdit(entry)}>Edit</EditButton>
+          <EditButton 
+            onClick={handleEditClick} 
+            disabled={!isEditable}
+            title={isEditable ? 'Edit this entry' : 'Only today\'s entries can be edited'}
+          >
+            Edit
+          </EditButton>
         </ActionButtons>
+        {showNonEditableMessage && (
+          <div style={{
+            position: 'absolute',
+            top: '70px',
+            right: '20px',
+            background: '#f8d7da',
+            color: '#721c24',
+            padding: '10px 15px',
+            borderRadius: '4px',
+            fontSize: '0.9rem',
+            zIndex: 100,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+          }}>
+            Only today's entries can be edited.
+          </div>
+        )}
       </PageHeader>
 
       <EntryContainer>

@@ -4,6 +4,7 @@ import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
 import MemoryView from '../components/MemoryView';
 import PasswordModal from './PasswordModal';
+import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
 
 // Styled components
 const Container = styled.div`
@@ -389,12 +390,14 @@ const ActionButton = styled.button`
   }
 `;
 
-const EditButton = styled(ActionButton)`
-  background-color: ${({ theme }) => theme.primary};
-  color: white;
+const EditButton = styled(ActionButton)<{ disabled?: boolean }>`
+  background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary};
+  color: ${({ disabled }) => disabled ? '#999' : 'white'};
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
   
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
+    background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary + 'dd'};
   }
 `;
 
@@ -423,13 +426,9 @@ const EmptyMessage = styled.div`
   gap: 1rem;
 `;
 
-// Helper function to format dates
+// Use the utility function for formatting dates
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: '2-digit'
-  });
+  return formatDateUtil(date, 'short');
 };
 
 interface DiaryEntryListProps {
@@ -628,8 +627,17 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               }
             };
             
+            const isEditable = isEntryFromToday(entry);
+            
             const handleEditClick = (e: React.MouseEvent) => {
               e.stopPropagation(); // Prevent card click
+              
+              if (!isEditable) {
+                // Maybe show a toast or alert here
+                alert('Only today\'s entries can be edited.');
+                return;
+              }
+              
               if (entry.isLocked) {
                 setSelectedLockedEntry(entry);
                 setPasswordModalVisible(true);
@@ -767,7 +775,11 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                 </EntryCardContent>
                 
                 <CardActions>
-                  <EditButton onClick={handleEditClick}>
+                  <EditButton 
+                    onClick={handleEditClick} 
+                    disabled={!isEditable} 
+                    title={isEditable ? 'Edit this entry' : 'Only today\'s entries can be edited'}
+                  >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
