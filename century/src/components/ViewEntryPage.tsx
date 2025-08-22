@@ -143,15 +143,16 @@ const ImagesTitle = styled.h3`
 `;
 
 const ImageGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1.5rem;
 `;
 
 const ImageItem = styled.div`
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 250px;
+  display: inline-block;
 `;
 
 const Image = styled.img`

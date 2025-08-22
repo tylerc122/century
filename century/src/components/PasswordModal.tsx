@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 
 interface PasswordModalProps {
-  onUnlock: () => void;
+  onUnlock?: () => void;
+  onSubmit?: () => void;
   onCancel: () => void;
-  isVisible: boolean;
+  isVisible?: boolean;
+  title?: string;
+  currentPassword?: string;
+  setCurrentPassword?: React.Dispatch<React.SetStateAction<string>>;
+  newPassword?: string;
+  setNewPassword?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ModalOverlay = styled.div<{ isVisible: boolean }>`
@@ -97,41 +103,89 @@ const ErrorMessage = styled.p`
   margin: -1rem 0 1rem;
 `;
 
-const PasswordModal: React.FC<PasswordModalProps> = ({ onUnlock, onCancel, isVisible }) => {
+const PasswordModal: React.FC<PasswordModalProps> = ({ 
+  onUnlock, 
+  onSubmit, 
+  onCancel, 
+  isVisible = true,
+  title = '🔒 This entry is locked',
+  currentPassword,
+  setCurrentPassword,
+  newPassword,
+  setNewPassword
+}) => {
+  // For password unlock mode (original functionality)
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  
+  // Determine if we're in password change mode
+  const isChangeMode = setCurrentPassword !== undefined && setNewPassword !== undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, accept any input as valid (placeholder for real authentication)
-    if (password.trim() === '') {
-      setError('Please enter a password');
+    
+    if (isChangeMode) {
+      // Password change mode
+      if (!currentPassword || currentPassword.trim() === '') {
+        setError('Please enter your current password');
+      } else if (!newPassword || newPassword.trim() === '') {
+        setError('Please enter a new password');
+      } else if (onSubmit) {
+        onSubmit();
+        setError('');
+      }
     } else {
-      onUnlock();
-      setPassword('');
-      setError('');
+      // Password unlock mode (original functionality)
+      if (password.trim() === '') {
+        setError('Please enter a password');
+      } else if (onUnlock) {
+        onUnlock();
+        setPassword('');
+        setError('');
+      }
     }
   };
 
   return (
     <ModalOverlay isVisible={isVisible} onClick={onCancel}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalTitle>🔒 This entry is locked</ModalTitle>
+        <ModalTitle>{title}</ModalTitle>
         <form onSubmit={handleSubmit}>
-          <Input
-            type="password"
-            placeholder="Enter password to unlock"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoFocus
-          />
+          {isChangeMode ? (
+            // Password change mode UI
+            <>
+              <Input
+                type="password"
+                placeholder="Enter current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword?.(e.target.value)}
+                autoFocus
+              />
+              <Input
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword?.(e.target.value)}
+              />
+            </>
+          ) : (
+            // Password unlock mode UI (original functionality)
+            <Input
+              type="password"
+              placeholder="Enter password to unlock"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+          )}
+          
           {error && <ErrorMessage>{error}</ErrorMessage>}
           <ButtonGroup>
             <CancelButton type="button" onClick={onCancel}>
               Cancel
             </CancelButton>
             <UnlockButton type="submit">
-              Unlock
+              {isChangeMode ? 'Change Password' : 'Unlock'}
             </UnlockButton>
           </ButtonGroup>
         </form>
