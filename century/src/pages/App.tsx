@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import DiaryEntryList from '../components/DiaryEntryList';
 import Profile from '../components/Profile';
 import EntryPage from '../components/EntryPage';
+import ViewEntryPage from '../components/ViewEntryPage';
 import { DiaryEntry } from '../types';
 
 
@@ -95,7 +96,7 @@ const NavButton = styled.button<{ active: boolean }>`
 `;
 
 function App() {
-  const [activeView, setActiveView] = useState<'entries' | 'profile' | 'entry'>('entries');
+  const [activeView, setActiveView] = useState<'entries' | 'profile' | 'entry' | 'viewEntry'>('entries');
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
 
   const handleSelectEntry = (entry: DiaryEntry) => {
@@ -121,9 +122,26 @@ function App() {
               setSelectedEntry(entry);
               setActiveView('entry');
             }}
+            onViewEntry={(entry) => {
+              setSelectedEntry(entry);
+              setActiveView('viewEntry');
+            }}
           />
         )}
         {activeView === 'profile' && <Profile onSelectEntry={handleSelectEntry} />}
+        {activeView === 'viewEntry' && selectedEntry && (
+          <ViewEntryPage
+            entry={selectedEntry}
+            onClose={() => {
+              setActiveView('entries');
+              setSelectedEntry(undefined);
+            }}
+            onEdit={(entry) => {
+              setSelectedEntry(entry);
+              setActiveView('entry');
+            }}
+          />
+        )}
         {activeView === 'entry' && (
           <EntryPage 
             entry={selectedEntry}

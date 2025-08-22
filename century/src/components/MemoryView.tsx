@@ -6,6 +6,7 @@ import PasswordModal from './PasswordModal';
 
 interface MemoryViewProps {
   onSelectEntry: (entry: DiaryEntry) => void;
+  onViewEntry?: (entry: DiaryEntry) => void;
 }
 
 // Styled components
@@ -102,7 +103,7 @@ const getMemoriesFromPast = (entries: DiaryEntry[]): DiaryEntry[] => {
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
+const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry, onViewEntry }) => {
   const [memories, setMemories] = useState<DiaryEntry[]>([]);
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
@@ -126,6 +127,8 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
     if (memory.isLocked) {
       setSelectedLockedEntry(memory);
       setPasswordModalVisible(true);
+    } else if (onViewEntry) {
+      onViewEntry(memory);
     } else {
       onSelectEntry(memory);
     }
@@ -169,7 +172,11 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
         isVisible={passwordModalVisible}
         onUnlock={() => {
           if (selectedLockedEntry) {
-            onSelectEntry(selectedLockedEntry);
+            if (onViewEntry) {
+              onViewEntry(selectedLockedEntry);
+            } else {
+              onSelectEntry(selectedLockedEntry);
+            }
             setPasswordModalVisible(false);
             setSelectedLockedEntry(null);
           }

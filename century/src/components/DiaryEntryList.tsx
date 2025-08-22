@@ -257,7 +257,7 @@ const EntryPreview = styled.p<{ isLocked?: boolean }>`
 `;
 
 const EntryCardContent = styled.div`
-  padding: 1.25rem;
+  padding: 1.25rem 1.25rem 0.75rem;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -363,6 +363,41 @@ const MultipleImagesIndicator = styled.div`
   font-weight: 600;
 `;
 
+const CardActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 1.25rem 1rem;
+  gap: 0.5rem;
+`;
+
+const ActionButton = styled.button`
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background-color: ${({ theme }) => theme.light};
+  color: ${({ theme }) => theme.foreground};
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.border};
+  }
+`;
+
+const EditButton = styled(ActionButton)`
+  background-color: ${({ theme }) => theme.primary};
+  color: white;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.primary + 'dd'};
+  }
+`;
+
 
 
 const LoadingMessage = styled.div`
@@ -400,11 +435,13 @@ const formatDate = (date: Date): string => {
 interface DiaryEntryListProps {
   setSelectedEntry: (entry: DiaryEntry | undefined) => void;
   onEditEntry?: (entry: DiaryEntry) => void;
+  onViewEntry?: (entry: DiaryEntry) => void;
 }
 
 const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ 
   setSelectedEntry,
-  onEditEntry
+  onEditEntry,
+  onViewEntry
 }) => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
@@ -570,7 +607,10 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
         </SortButton>
       </SearchSortContainer>
 
-      <MemoryView onSelectEntry={setSelectedEntry} />
+      <MemoryView 
+        onSelectEntry={setSelectedEntry}
+        onViewEntry={onViewEntry} 
+      />
       
       <EntryList>
         {isLoading ? (
@@ -581,10 +621,20 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               if (entry.isLocked) {
                 setSelectedLockedEntry(entry);
                 setPasswordModalVisible(true);
-              } else if (onEditEntry) {
-                onEditEntry(entry);
+              } else if (onViewEntry) {
+                onViewEntry(entry);
               } else {
                 setSelectedEntry(entry);
+              }
+            };
+            
+            const handleEditClick = (e: React.MouseEvent) => {
+              e.stopPropagation(); // Prevent card click
+              if (entry.isLocked) {
+                setSelectedLockedEntry(entry);
+                setPasswordModalVisible(true);
+              } else if (onEditEntry) {
+                onEditEntry(entry);
               }
             };
 
@@ -715,6 +765,16 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                   <EntryDate>{formatDate(entry.date)}</EntryDate>
                   <EntryPreview isLocked={entry.isLocked}>{entry.content}</EntryPreview>
                 </EntryCardContent>
+                
+                <CardActions>
+                  <EditButton onClick={handleEditClick}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Edit
+                  </EditButton>
+                </CardActions>
 
               </EntryCard>
             );
@@ -748,7 +808,9 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
         onUnlock={() => {
           if (selectedLockedEntry) {
             // When unlocked, navigate to the entry
-            if (onEditEntry) {
+            if (onViewEntry) {
+              onViewEntry(selectedLockedEntry);
+            } else if (onEditEntry) {
               onEditEntry(selectedLockedEntry);
             } else {
               setSelectedEntry(selectedLockedEntry);
