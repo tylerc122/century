@@ -162,13 +162,12 @@ const SortButton = styled.button<{ active: boolean }>`
 
 const EntryList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1.5rem;
   padding: 0.5rem;
 `;
 
 const EntryCard = styled.div`
-  padding: 1.25rem;
   border-radius: 12px;
   background-color: ${({ theme }) => theme.cardBackground};
   box-shadow: ${({ theme }) => theme.cardShadow};
@@ -244,12 +243,48 @@ const EntryPreview = styled.p`
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   margin: 0;
   flex: 1;
   line-height: 1.5;
   opacity: 0.9;
+`;
+
+const EntryCardContent = styled.div`
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+`;
+
+const EntryImagePreview = styled.div`
+  height: 140px;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: ${({ theme }) => theme.background};
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const EntryImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const MultipleImagesIndicator = styled.div`
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
 `;
 
 const LoadingMessage = styled.div`
@@ -466,31 +501,41 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               key={entry.id} 
               onClick={() => onEditEntry ? onEditEntry(entry) : setSelectedEntry(entry)}
             >
-              <EntryCardHeader>
-                <EntryTitle>{entry.title}</EntryTitle>
-                <EntryStatusIcons>
-                  {entry.isLocked && <EntryStatusIcon>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                  </EntryStatusIcon>}
-                  {entry.isFavorite && <EntryStatusIcon>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                  </EntryStatusIcon>}
-                  {entry.isRetroactive && <EntryStatusIcon title="Added retroactively">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="12" y1="6" x2="12" y2="12"></line>
-                      <line x1="12" y1="16" x2="12" y2="16"></line>
-                    </svg>
-                  </EntryStatusIcon>}
-                </EntryStatusIcons>
-              </EntryCardHeader>
-              <EntryDate>{formatDate(entry.date)}</EntryDate>
-              <EntryPreview>{entry.content}</EntryPreview>
+              {entry.images && entry.images.length > 0 && (
+                <EntryImagePreview>
+                  <EntryImage src={entry.images[0]} alt="" />
+                  {entry.images.length > 1 && (
+                    <MultipleImagesIndicator>+{entry.images.length - 1}</MultipleImagesIndicator>
+                  )}
+                </EntryImagePreview>
+              )}
+              <EntryCardContent>
+                <EntryCardHeader>
+                  <EntryTitle>{entry.title}</EntryTitle>
+                  <EntryStatusIcons>
+                    {entry.isLocked && <EntryStatusIcon>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </EntryStatusIcon>}
+                    {entry.isFavorite && <EntryStatusIcon>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </EntryStatusIcon>}
+                    {entry.isRetroactive && <EntryStatusIcon title="Added retroactively">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="6" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                      </svg>
+                    </EntryStatusIcon>}
+                  </EntryStatusIcons>
+                </EntryCardHeader>
+                <EntryDate>{formatDate(entry.date)}</EntryDate>
+                <EntryPreview>{entry.content}</EntryPreview>
+              </EntryCardContent>
             </EntryCard>
           ))
         ) : (
