@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
 import MemoryView from '../components/MemoryView';
+import PasswordModal from './PasswordModal';
 
 // Styled components
 const Container = styled.div`
@@ -167,7 +168,7 @@ const EntryList = styled.div`
   padding: 0.5rem;
 `;
 
-const EntryCard = styled.div`
+const EntryCard = styled.div<{ isLocked?: boolean }>`
   border-radius: 12px;
   background-color: ${({ theme }) => theme.cardBackground};
   box-shadow: ${({ theme }) => theme.cardShadow};
@@ -218,7 +219,7 @@ const EntryStatusIcon = styled.span`
   font-size: 0.85rem;
 `;
 
-const EntryTitle = styled.h3`
+const EntryTitle = styled.h3<{ isLocked?: boolean }>`
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
@@ -227,6 +228,8 @@ const EntryTitle = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.01em;
+  filter: ${({ isLocked }) => isLocked ? 'blur(5px)' : 'none'};
+  transition: filter 0.3s ease;
 `;
 
 const EntryDate = styled.span`
@@ -237,7 +240,7 @@ const EntryDate = styled.span`
   font-weight: 500;
 `;
 
-const EntryPreview = styled.p`
+const EntryPreview = styled.p<{ isLocked?: boolean }>`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.foreground};
   overflow: hidden;
@@ -249,6 +252,8 @@ const EntryPreview = styled.p`
   flex: 1;
   line-height: 1.5;
   opacity: 0.9;
+  filter: ${({ isLocked }) => isLocked ? 'blur(5px)' : 'none'};
+  transition: filter 0.3s ease;
 `;
 
 const EntryCardContent = styled.div`
@@ -269,10 +274,12 @@ const EntryImagePreview = styled.div`
   align-items: center;
 `;
 
-const EntryImage = styled.img`
+const EntryImage = styled.img<{ isLocked?: boolean }>`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: ${({ isLocked }) => isLocked ? 'blur(10px)' : 'none'};
+  transition: filter 0.3s ease;
 `;
 
 const MultipleImagesIndicator = styled.div`
@@ -286,6 +293,8 @@ const MultipleImagesIndicator = styled.div`
   font-size: 0.7rem;
   font-weight: 600;
 `;
+
+
 
 const LoadingMessage = styled.div`
   padding: 1rem;
@@ -335,6 +344,8 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
   const [sortCriteria, setSortCriteria] = useState<'date' | 'title' | 'favorite'>('date');
   const [sortAscending, setSortAscending] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
+  const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
 
   const loadEntries = async () => {
     try {
@@ -496,48 +507,67 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
         {isLoading ? (
           <LoadingMessage>Loading entries...</LoadingMessage>
         ) : filteredEntries.length > 0 ? (
-          filteredEntries.map((entry) => (
-            <EntryCard 
-              key={entry.id} 
-              onClick={() => onEditEntry ? onEditEntry(entry) : setSelectedEntry(entry)}
-            >
-              {entry.images && entry.images.length > 0 && (
-                <EntryImagePreview>
-                  <EntryImage src={entry.images[0]} alt="" />
-                  {entry.images.length > 1 && (
-                    <MultipleImagesIndicator>+{entry.images.length - 1}</MultipleImagesIndicator>
-                  )}
-                </EntryImagePreview>
-              )}
-              <EntryCardContent>
-                <EntryCardHeader>
-                  <EntryTitle>{entry.title}</EntryTitle>
-                  <EntryStatusIcons>
-                    {entry.isLocked && <EntryStatusIcon>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                    </EntryStatusIcon>}
-                    {entry.isFavorite && <EntryStatusIcon>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                    </EntryStatusIcon>}
-                    {entry.isRetroactive && <EntryStatusIcon title="Added retroactively">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="6" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12" y2="16"></line>
-                      </svg>
-                    </EntryStatusIcon>}
-                  </EntryStatusIcons>
-                </EntryCardHeader>
-                <EntryDate>{formatDate(entry.date)}</EntryDate>
-                <EntryPreview>{entry.content}</EntryPreview>
-              </EntryCardContent>
-            </EntryCard>
-          ))
+          filteredEntries.map((entry) => {
+            const handleCardClick = () => {
+              if (entry.isLocked) {
+                setSelectedLockedEntry(entry);
+                setPasswordModalVisible(true);
+              } else if (onEditEntry) {
+                onEditEntry(entry);
+              } else {
+                setSelectedEntry(entry);
+              }
+            };
+
+            return (
+              <EntryCard 
+                key={entry.id} 
+                onClick={handleCardClick}
+                isLocked={entry.isLocked}
+              >
+                {entry.images && entry.images.length > 0 && (
+                  <EntryImagePreview>
+                    <EntryImage 
+                      src={entry.images[0]} 
+                      alt="" 
+                      isLocked={entry.isLocked}
+                    />
+                    {entry.images.length > 1 && !entry.isLocked && (
+                      <MultipleImagesIndicator>+{entry.images.length - 1}</MultipleImagesIndicator>
+                    )}
+                  </EntryImagePreview>
+                )}
+                <EntryCardContent>
+                  <EntryCardHeader>
+                    <EntryTitle isLocked={entry.isLocked}>{entry.title}</EntryTitle>
+                    <EntryStatusIcons>
+                      {entry.isLocked && <EntryStatusIcon>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                      </EntryStatusIcon>}
+                      {entry.isFavorite && <EntryStatusIcon>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </EntryStatusIcon>}
+                      {entry.isRetroactive && <EntryStatusIcon title="Added retroactively">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="6" x2="12" y2="12"></line>
+                          <line x1="12" y1="16" x2="12" y2="16"></line>
+                        </svg>
+                      </EntryStatusIcon>}
+                    </EntryStatusIcons>
+                  </EntryCardHeader>
+                  <EntryDate>{formatDate(entry.date)}</EntryDate>
+                  <EntryPreview isLocked={entry.isLocked}>{entry.content}</EntryPreview>
+                </EntryCardContent>
+
+              </EntryCard>
+            );
+          })
         ) : (
           <EmptyMessage>
             {entries.length === 0 ? (
@@ -560,6 +590,27 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       {/* Button moved to header */}
 
       {/* Old form components removed in favor of EntryPage */}
+      
+      {/* Password Modal for locked entries */}
+      <PasswordModal 
+        isVisible={passwordModalVisible}
+        onUnlock={() => {
+          if (selectedLockedEntry) {
+            // When unlocked, navigate to the entry
+            if (onEditEntry) {
+              onEditEntry(selectedLockedEntry);
+            } else {
+              setSelectedEntry(selectedLockedEntry);
+            }
+            setPasswordModalVisible(false);
+            setSelectedLockedEntry(null);
+          }
+        }}
+        onCancel={() => {
+          setPasswordModalVisible(false);
+          setSelectedLockedEntry(null);
+        }}
+      />
     </Container>
   );
 };

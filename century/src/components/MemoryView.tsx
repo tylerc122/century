@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
+import PasswordModal from './PasswordModal';
 
 interface MemoryViewProps {
   onSelectEntry: (entry: DiaryEntry) => void;
@@ -38,7 +39,7 @@ const MemoryBadge = styled.span`
   margin-left: 0.75rem;
 `;
 
-const MemoryCard = styled.div`
+const MemoryCard = styled.div<{ isLocked?: boolean }>`
   padding: 1rem;
   border-radius: 8px;
   background-color: ${({ theme }) => theme.cardBackground};
@@ -46,11 +47,14 @@ const MemoryCard = styled.div`
   transition: transform 0.2s ease;
   cursor: pointer;
   border-left: 4px solid ${({ theme }) => theme.info};
+  position: relative;
 
   &:hover {
     transform: translateY(-2px);
   }
 `;
+
+
 
 const MemoryDate = styled.span`
   font-size: 0.85rem;
@@ -59,10 +63,12 @@ const MemoryDate = styled.span`
   margin-bottom: 0.5rem;
 `;
 
-const MemoryPreview = styled.p`
+const MemoryPreview = styled.p<{ isLocked?: boolean }>`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
+  filter: ${({ isLocked }) => isLocked ? 'blur(5px)' : 'none'};
+  transition: filter 0.3s ease;
 `;
 
 const NoMemoryMessage = styled.p`
@@ -98,6 +104,8 @@ const getMemoriesFromPast = (entries: DiaryEntry[]): DiaryEntry[] => {
 
 const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
   const [memories, setMemories] = useState<DiaryEntry[]>([]);
+  const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
+  const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
 
   useEffect(() => {
     const loadMemories = async () => {
@@ -113,6 +121,15 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
     
     loadMemories();
   }, []);
+
+  const handleMemoryClick = (memory: DiaryEntry) => {
+    if (memory.isLocked) {
+      setSelectedLockedEntry(memory);
+      setPasswordModalVisible(true);
+    } else {
+      onSelectEntry(memory);
+    }
+  };
 
   if (memories.length === 0) {
     return null;
@@ -130,17 +147,38 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry }) => {
           const yearsAgo = new Date().getFullYear() - new Date(memory.date).getFullYear();
           
           return (
-            <MemoryCard key={memory.id} onClick={() => onSelectEntry(memory)}>
+            <MemoryCard 
+              key={memory.id} 
+              onClick={() => handleMemoryClick(memory)}
+              isLocked={memory.isLocked}
+            >
               <MemoryDate>
                 {formatDate(new Date(memory.date))} ({yearsAgo} {yearsAgo === 1 ? 'year' : 'years'} ago)
               </MemoryDate>
-              <MemoryPreview>{memory.title}</MemoryPreview>
+              <MemoryPreview isLocked={memory.isLocked}>{memory.title}</MemoryPreview>
+
             </MemoryCard>
           );
         })
       ) : (
         <NoMemoryMessage>No memories found for today.</NoMemoryMessage>
       )}
+      
+      {/* Password Modal for locked entries */}
+      <PasswordModal 
+        isVisible={passwordModalVisible}
+        onUnlock={() => {
+          if (selectedLockedEntry) {
+            onSelectEntry(selectedLockedEntry);
+            setPasswordModalVisible(false);
+            setSelectedLockedEntry(null);
+          }
+        }}
+        onCancel={() => {
+          setPasswordModalVisible(false);
+          setSelectedLockedEntry(null);
+        }}
+      />
     </MemoryContainer>
   );
 };
