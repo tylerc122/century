@@ -165,14 +165,7 @@ const SaveButton = styled(Button)`
   }
 `;
 
-const DeleteButton = styled(Button)`
-  background-color: ${({ theme }) => theme.danger || '#e53935'};
-  color: white;
-  
-  &:hover {
-    background-color: ${({ theme }) => theme.danger ? theme.danger + 'dd' : '#c62828'};
-  }
-`;
+// Delete button removed - functionality moved to ViewEntryPage
 
 const ImageUploadArea = styled.div`
   padding: 1rem;
@@ -332,7 +325,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const [images, setImages] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Delete functionality removed from edit view
   const [canEdit, setCanEdit] = useState(true);
   const [showEditWarning, setShowEditWarning] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -463,16 +456,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
     }
   };
   
-  const handleDelete = async () => {
-    if (!entry) return;
-    
-    try {
-      await diaryService.deleteEntry(entry.id);
-      onSave(); // Use the existing onSave to close the form and refresh the list
-    } catch (error) {
-      console.error('Failed to delete diary entry:', error);
-    }
-  };
+  // Delete functionality moved to ViewEntryPage
 
   return (
     <Overlay onClick={onCancel}>
@@ -592,15 +576,8 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
         </FormContent>
         
         <FormActions>
-          {entry && (
-            <DeleteButton 
-              onClick={showDeleteConfirm ? handleDelete : () => setShowDeleteConfirm(true)}
-            >
-              {showDeleteConfirm ? 'Confirm Delete' : 'Delete'}
-            </DeleteButton>
-          )}
-          {/* Spacer element for when there's no entry */}
-          {!entry && <div />}
+          {/* Delete button removed - functionality moved to ViewEntryPage */}
+          <div /> {/* Spacer element */}
           
           <RightActions>
             <CancelButton onClick={onCancel}>Cancel</CancelButton>

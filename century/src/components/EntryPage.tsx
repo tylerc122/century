@@ -93,14 +93,7 @@ const SaveButton = styled(Button)`
   }
 `;
 
-const DeleteButton = styled(Button)`
-  background-color: ${({ theme }) => theme.danger || '#e53935'};
-  color: white;
-  
-  &:hover {
-    background-color: ${({ theme }) => theme.danger ? theme.danger + 'dd' : '#c62828'};
-  }
-`;
+// Delete button removed - functionality moved to ViewEntryPage
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
@@ -312,7 +305,7 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
   const [images, setImages] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Delete functionality removed from edit view
   const [canEdit, setCanEdit] = useState(true);
   const [showEditWarning, setShowEditWarning] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -412,16 +405,7 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
     }
   };
   
-  const handleDelete = async () => {
-    if (!entry) return;
-    
-    try {
-      await diaryService.deleteEntry(entry.id);
-      onSave();
-    } catch (error) {
-      console.error('Failed to delete diary entry:', error);
-    }
-  };
+  // Delete functionality moved to ViewEntryPage
 
   return (
     <PageContainer>
@@ -435,16 +419,7 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
           )}
         </PageTitle>
         <ActionButtons>
-          {entry && showDeleteConfirm && (
-            <DeleteButton onClick={handleDelete}>
-              Confirm Delete
-            </DeleteButton>
-          )}
-          {entry && !showDeleteConfirm && (
-            <DeleteButton onClick={() => setShowDeleteConfirm(true)}>
-              Delete
-            </DeleteButton>
-          )}
+          {/* Delete button removed from edit view */}
           <CancelButton onClick={onCancel}>Cancel</CancelButton>
           <SaveButton onClick={handleSave}>Save</SaveButton>
         </ActionButtons>

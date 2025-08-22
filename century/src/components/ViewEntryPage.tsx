@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
+import diaryService from '../services/diaryService';
 
 interface ViewEntryPageProps {
   entry: DiaryEntry;
@@ -70,6 +71,15 @@ const EditButton = styled(Button)<{ disabled?: boolean }>`
   
   &:hover {
     background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary + 'dd'};
+  }
+`;
+
+const DeleteButton = styled(Button)`
+  background-color: ${({ theme }) => theme.danger || '#e53935'};
+  color: white;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.danger ? theme.danger + 'dd' : '#c62828'};
   }
 `;
 
@@ -158,6 +168,7 @@ const formatDate = (date: Date): string => {
 const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit }) => {
   const isEditable = isEntryFromToday(entry);
   const [showNonEditableMessage, setShowNonEditableMessage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const handleEditClick = () => {
     if (!isEditable) {
@@ -167,6 +178,16 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
     }
     
     onEdit(entry);
+  };
+  
+  const handleDelete = async () => {
+    try {
+      await diaryService.deleteEntry(entry.id);
+      onClose(); // Close the view and return to the list
+    } catch (error) {
+      console.error('Failed to delete diary entry:', error);
+      alert('Failed to delete entry');
+    }
   };
   return (
     <PageContainer>
@@ -181,6 +202,11 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
         </PageTitle>
         <ActionButtons>
           <CloseButton onClick={onClose}>Close</CloseButton>
+          {showDeleteConfirm ? (
+            <DeleteButton onClick={handleDelete}>Confirm Delete</DeleteButton>
+          ) : (
+            <DeleteButton onClick={() => setShowDeleteConfirm(true)}>Delete</DeleteButton>
+          )}
           <EditButton 
             onClick={handleEditClick} 
             disabled={!isEditable}
