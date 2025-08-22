@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
-import DiaryEntryForm from '../components/DiaryEntryForm';
 import MemoryView from '../components/MemoryView';
 
 // Styled components
@@ -286,17 +285,13 @@ const formatDate = (date: Date): string => {
 };
 
 interface DiaryEntryListProps {
-  showEntryForm: boolean;
-  setShowEntryForm: (show: boolean) => void;
-  selectedEntry?: DiaryEntry;
   setSelectedEntry: (entry: DiaryEntry | undefined) => void;
+  onEditEntry?: (entry: DiaryEntry) => void;
 }
 
 const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ 
-  showEntryForm, 
-  setShowEntryForm, 
-  selectedEntry: propSelectedEntry, 
-  setSelectedEntry 
+  setSelectedEntry,
+  onEditEntry
 }) => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
@@ -467,7 +462,10 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
           <LoadingMessage>Loading entries...</LoadingMessage>
         ) : filteredEntries.length > 0 ? (
           filteredEntries.map((entry) => (
-            <EntryCard key={entry.id} onClick={() => setSelectedEntry(entry)}>
+            <EntryCard 
+              key={entry.id} 
+              onClick={() => onEditEntry ? onEditEntry(entry) : setSelectedEntry(entry)}
+            >
               <EntryCardHeader>
                 <EntryTitle>{entry.title}</EntryTitle>
                 <EntryStatusIcons>
@@ -516,26 +514,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
 
       {/* Button moved to header */}
 
-      {showEntryForm && (
-        <DiaryEntryForm 
-          onSave={() => {
-            setShowEntryForm(false);
-            loadEntries();
-          }}
-          onCancel={() => setShowEntryForm(false)}
-        />
-      )}
-      
-      {propSelectedEntry && (
-        <DiaryEntryForm 
-          entry={propSelectedEntry}
-          onSave={() => {
-            setSelectedEntry(undefined);
-            loadEntries();
-          }}
-          onCancel={() => setSelectedEntry(undefined)}
-        />
-      )}
+      {/* Old form components removed in favor of EntryPage */}
     </Container>
   );
 };

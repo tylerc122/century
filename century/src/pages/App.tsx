@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import DiaryEntryList from '../components/DiaryEntryList';
 import Profile from '../components/Profile';
+import EntryPage from '../components/EntryPage';
 import { DiaryEntry } from '../types';
 
 
@@ -94,8 +95,7 @@ const NavButton = styled.button<{ active: boolean }>`
 `;
 
 function App() {
-  const [activeView, setActiveView] = useState<'entries' | 'profile'>('entries');
-  const [showEntryForm, setShowEntryForm] = useState<boolean>(false);
+  const [activeView, setActiveView] = useState<'entries' | 'profile' | 'entry'>('entries');
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
 
   const handleSelectEntry = (entry: DiaryEntry) => {
@@ -107,19 +107,33 @@ function App() {
     <AppContainer>
       <Header>
         <Title>century</Title>
-        <NewEntryButton onClick={() => setShowEntryForm(true)}>+</NewEntryButton>
+        <NewEntryButton onClick={() => setActiveView('entry')}>+</NewEntryButton>
       </Header>
 
       <Content>
         {activeView === 'entries' && (
           <DiaryEntryList 
-            showEntryForm={showEntryForm} 
-            setShowEntryForm={setShowEntryForm}
-            selectedEntry={selectedEntry}
             setSelectedEntry={setSelectedEntry}
+            onEditEntry={(entry) => {
+              setSelectedEntry(entry);
+              setActiveView('entry');
+            }}
           />
         )}
         {activeView === 'profile' && <Profile onSelectEntry={handleSelectEntry} />}
+        {activeView === 'entry' && (
+          <EntryPage 
+            entry={selectedEntry}
+            onSave={() => {
+              setActiveView('entries');
+              setSelectedEntry(undefined);
+            }}
+            onCancel={() => {
+              setActiveView('entries');
+              setSelectedEntry(undefined);
+            }}
+          />
+        )}
       </Content>
 
       <Navigation>
@@ -129,6 +143,14 @@ function App() {
         >
           Entries
         </NavButton>
+        {activeView === 'entry' && (
+          <NavButton 
+            active={true} 
+            onClick={() => {}}
+          >
+            {selectedEntry ? 'Edit Entry' : 'New Entry'}
+          </NavButton>
+        )}
         <NavButton 
           active={activeView === 'profile'} 
           onClick={() => setActiveView('profile')}
