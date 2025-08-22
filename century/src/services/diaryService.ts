@@ -87,34 +87,9 @@ class DiaryStorage {
   
   // Add a new entry
   addEntry(entry: Omit<DiaryEntry, 'id'>): DiaryEntry {
-    // Check if an entry already exists for this date
+    // Allow multiple entries per day - no longer checking for existing entries
     const entryDate = new Date(entry.date);
     entryDate.setHours(0, 0, 0, 0);
-    
-    const existingEntry = this.entries.find(e => {
-      const eDate = new Date(e.date);
-      eDate.setHours(0, 0, 0, 0);
-      return eDate.getTime() === entryDate.getTime();
-    });
-    
-    // If entry exists for this date, update it instead of adding a new one
-    if (existingEntry) {
-      const updatedEntry: DiaryEntry = {
-        ...entry,
-        id: existingEntry.id,
-        createdAt: existingEntry.createdAt,
-        isLocked: entry.isLocked || existingEntry.isLocked || false,
-        isFavorite: entry.isFavorite || existingEntry.isFavorite || false,
-        isRetroactive: existingEntry.isRetroactive
-      };
-      
-      this.entries = this.entries.map(e => 
-        e.id === existingEntry.id ? updatedEntry : e
-      );
-      
-      this.saveToStorage();
-      return updatedEntry;
-    }
     
     const now = new Date();
     const today = new Date(now);
@@ -329,16 +304,22 @@ export const diaryService = {
     return storage.getFavoriteEntries();
   },
   
-  getEntryByDate: async (date: Date): Promise<DiaryEntry | undefined> => {
+  getEntriesByDate: async (date: Date): Promise<DiaryEntry[]> => {
     const entries = storage.getAllEntries();
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
     
-    return entries.find(entry => {
+    return entries.filter(entry => {
       const entryDate = new Date(entry.date);
       entryDate.setHours(0, 0, 0, 0);
       return entryDate.getTime() === targetDate.getTime();
     });
+  },
+  
+  // Keep the original method for backward compatibility
+  getEntryByDate: async (date: Date): Promise<DiaryEntry | undefined> => {
+    const entries = await diaryService.getEntriesByDate(date);
+    return entries.length > 0 ? entries[0] : undefined;
   },
   
   addEntry: async (entry: Omit<DiaryEntry, 'id'>): Promise<DiaryEntry> => {
