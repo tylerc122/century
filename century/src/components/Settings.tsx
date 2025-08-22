@@ -82,36 +82,85 @@ const SettingControl = styled.div`
   gap: 1rem;
 `;
 
-const SelectWrapper = styled.div`
+const StyledDropdownContainer = styled.div`
   position: relative;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(93, 64, 55, 0.08);
   min-width: 180px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 `;
 
-const StyledSelect = styled.select`
-  width: 100%;
-  padding: 0.75rem 1rem;
-  appearance: none;
-  background-color: ${({ theme }) => theme.light};
+const DropdownHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   color: ${({ theme }) => theme.foreground};
-  border: 1px solid ${({ theme }) => theme.border};
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: normal;
+  width: 100%;
   
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary + '40'};
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+  }
+  
+  &.open svg {
+    transform: rotate(180deg);
   }
 `;
 
-const SelectArrow = styled.div`
+const DropdownMenu = styled.div`
   position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: ${({ theme }) => theme.secondary};
+  top: calc(100% + 5px);
+  left: 0;
+  width: 100%;
+  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+  z-index: 100;
+`;
+
+const MenuItem = styled.div<{ active: boolean }>`
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  background-color: ${({ active }) => active ? `rgba(210, 105, 30, 0.15)` : 'transparent'};
+  font-weight: ${({ active }) => active ? 500 : 400};
+  
+  &:hover {
+    background-color: rgba(210, 105, 30, 0.08);
+  }
+  
+  svg {
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+`;
+
+// Hidden actual select for accessibility
+const HiddenSelect = styled.select`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 `;
 
 const Button = styled.button`
@@ -199,6 +248,17 @@ const FONT_SIZES = [
 
 const FONT_FAMILIES = [
   { label: 'Default (Social Haus)', value: '"Space Grotesk", sans-serif' },
+  { label: 'Satoshi', value: "'Satoshi', sans-serif" },
+  { label: 'Inter', value: "'Inter', sans-serif" },
+  { label: 'Geist Sans', value: "'Geist Sans', sans-serif" },
+  { label: 'Plus Jakarta Sans', value: "'Plus Jakarta Sans', sans-serif" },
+  { label: 'Manrope', value: "'Manrope', sans-serif" },
+  { label: 'Poppins', value: "'Poppins', sans-serif" },
+  { label: 'Playfair Display', value: "'Playfair Display', serif" },
+  { label: 'Roboto Slab', value: "'Roboto Slab', serif" },
+  { label: 'Lora', value: "'Lora', serif" },
+  { label: 'Dancing Script', value: "'Dancing Script', cursive" },
+  { label: 'Caveat', value: "'Caveat', cursive" },
   { label: 'System Sans-Serif', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' },
   { label: 'Serif', value: 'Georgia, "Times New Roman", Times, serif' },
   { label: 'Sans Serif', value: 'Arial, Helvetica, sans-serif' },
@@ -220,6 +280,11 @@ const Settings: React.FC<SettingsProps> = () => {
   const [fontSize, setFontSize] = useState('16px');
   const [fontFamily, setFontFamily] = useState('"Space Grotesk", sans-serif');
   const [themeName, setThemeName] = useState('warm');
+  
+  // State for dropdowns
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [fontSizeDropdownOpen, setFontSizeDropdownOpen] = useState(false);
+  const [fontFamilyDropdownOpen, setFontFamilyDropdownOpen] = useState(false);
   
   // State for modals/dialogs
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -308,27 +373,68 @@ const Settings: React.FC<SettingsProps> = () => {
       }
     };
   }, [themeContext]);
-
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.theme-dropdown')) {
+        setThemeDropdownOpen(false);
+      }
+      if (!target.closest('.fontsize-dropdown')) {
+        setFontSizeDropdownOpen(false);
+      }
+      if (!target.closest('.fontfamily-dropdown')) {
+        setFontFamilyDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
 
   // Handle theme change - apply and save immediately
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTheme = e.target.value;
-    setThemeName(newTheme);
+    applyTheme(newTheme);
+  };
+  
+  // Handle direct theme selection from dropdown
+  const handleThemeSelect = (theme: string) => {
+    applyTheme(theme);
+    setThemeDropdownOpen(false);
+  };
+  
+  // Apply theme function
+  const applyTheme = (theme: string) => {
+    setThemeName(theme);
     
     // Apply theme change immediately
     if (themeContext && themeContext.setTheme) {
-      themeContext.setTheme(newTheme);
+      themeContext.setTheme(theme);
     }
     
     // Save to localStorage
-    saveSettingToLocalStorage('themeName', newTheme);
+    saveSettingToLocalStorage('themeName', theme);
   };
 
   // Handle font size change - apply and save immediately
   const handleFontSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFontSize = e.target.value;
-    
+    applyFontSize(newFontSize);
+  };
+  
+  // Handle direct font size selection from dropdown
+  const handleFontSizeSelect = (size: string) => {
+    applyFontSize(size);
+    setFontSizeDropdownOpen(false);
+  };
+  
+  // Apply font size function
+  const applyFontSize = (newFontSize: string) => {
     // Clear any existing timeouts
     if (window.fontSizeTimeout) {
       clearTimeout(window.fontSizeTimeout);
@@ -356,6 +462,17 @@ const Settings: React.FC<SettingsProps> = () => {
   // Handle font family change - apply and save immediately
   const handleFontFamilyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFontFamily = e.target.value;
+    applyFontFamily(newFontFamily);
+  };
+  
+  // Handle direct font family selection from dropdown
+  const handleFontFamilySelect = (family: string) => {
+    applyFontFamily(family);
+    setFontFamilyDropdownOpen(false);
+  };
+  
+  // Apply font family function
+  const applyFontFamily = (newFontFamily: string) => {
     setFontFamily(newFontFamily);
     
     // Apply immediately
@@ -479,16 +596,42 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Change the color theme of the application</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <SelectWrapper>
-              <StyledSelect value={themeName} onChange={handleThemeChange}>
+            <StyledDropdownContainer className="theme-dropdown" onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}>
+              <DropdownHeader className={themeDropdownOpen ? 'open' : ''}>
+                {AVAILABLE_THEMES.find(t => t.value === themeName)?.label || 'Select Theme'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </DropdownHeader>
+              
+              {/* Hidden accessible select for screen readers */}
+              <HiddenSelect 
+                value={themeName} 
+                onChange={handleThemeChange}
+                aria-label="Select theme"
+              >
                 {AVAILABLE_THEMES.map(theme => (
-                  <option key={theme.value} value={theme.value}>
-                    {theme.label}
-                  </option>
+                  <option key={theme.value} value={theme.value}>{theme.label}</option>
                 ))}
-              </StyledSelect>
-              <SelectArrow>▼</SelectArrow>
-            </SelectWrapper>
+              </HiddenSelect>
+              
+              {themeDropdownOpen && (
+                <DropdownMenu>
+                  {AVAILABLE_THEMES.map(theme => (
+                    <MenuItem 
+                      key={theme.value}
+                      active={themeName === theme.value} 
+                      onClick={() => handleThemeSelect(theme.value)}
+                    >
+                      {themeName === theme.value && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>} 
+                      {theme.label}
+                    </MenuItem>
+                  ))}
+                </DropdownMenu>
+              )}
+            </StyledDropdownContainer>
           </SettingControl>
         </SettingRow>
 
@@ -498,20 +641,42 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Adjust the size of text throughout the app</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <SelectWrapper>
-              <StyledSelect 
+            <StyledDropdownContainer className="fontsize-dropdown" onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}>
+              <DropdownHeader className={fontSizeDropdownOpen ? 'open' : ''}>
+                {FONT_SIZES.find(f => f.value === fontSize)?.label || 'Select Size'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </DropdownHeader>
+              
+              {/* Hidden accessible select for screen readers */}
+              <HiddenSelect 
                 value={fontSize} 
                 onChange={handleFontSizeChange}
+                aria-label="Select font size"
               >
-                {/* Render font size options in their defined order */}
                 {FONT_SIZES.map(size => (
-                  <option key={size.value} value={size.value}>
-                    {size.label}
-                  </option>
+                  <option key={size.value} value={size.value}>{size.label}</option>
                 ))}
-              </StyledSelect>
-              <SelectArrow>▼</SelectArrow>
-            </SelectWrapper>
+              </HiddenSelect>
+              
+              {fontSizeDropdownOpen && (
+                <DropdownMenu>
+                  {FONT_SIZES.map(size => (
+                    <MenuItem 
+                      key={size.value}
+                      active={fontSize === size.value} 
+                      onClick={() => handleFontSizeSelect(size.value)}
+                    >
+                      {fontSize === size.value && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>} 
+                      {size.label}
+                    </MenuItem>
+                  ))}
+                </DropdownMenu>
+              )}
+            </StyledDropdownContainer>
           </SettingControl>
         </SettingRow>
 
@@ -521,16 +686,42 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Choose your preferred font style</SettingDescription>
           </SettingLabel>
           <SettingControl>
-            <SelectWrapper>
-              <StyledSelect value={fontFamily} onChange={handleFontFamilyChange}>
+            <StyledDropdownContainer className="fontfamily-dropdown" onClick={() => setFontFamilyDropdownOpen(!fontFamilyDropdownOpen)}>
+              <DropdownHeader className={fontFamilyDropdownOpen ? 'open' : ''}>
+                {FONT_FAMILIES.find(f => f.value === fontFamily)?.label || 'Select Font'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </DropdownHeader>
+              
+              {/* Hidden accessible select for screen readers */}
+              <HiddenSelect 
+                value={fontFamily} 
+                onChange={handleFontFamilyChange}
+                aria-label="Select font family"
+              >
                 {FONT_FAMILIES.map(font => (
-                  <option key={font.value} value={font.value}>
-                    {font.label}
-                  </option>
+                  <option key={font.value} value={font.value}>{font.label}</option>
                 ))}
-              </StyledSelect>
-              <SelectArrow>▼</SelectArrow>
-            </SelectWrapper>
+              </HiddenSelect>
+              
+              {fontFamilyDropdownOpen && (
+                <DropdownMenu>
+                  {FONT_FAMILIES.map(font => (
+                    <MenuItem 
+                      key={font.value}
+                      active={fontFamily === font.value} 
+                      onClick={() => handleFontFamilySelect(font.value)}
+                    >
+                      {fontFamily === font.value && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>} 
+                      {font.label}
+                    </MenuItem>
+                  ))}
+                </DropdownMenu>
+              )}
+            </StyledDropdownContainer>
           </SettingControl>
         </SettingRow>
         
