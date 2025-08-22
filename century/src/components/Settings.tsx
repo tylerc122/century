@@ -3,6 +3,13 @@ import styled from 'styled-components';
 import ThemeContext from '../theme/ThemeContext';
 import PasswordModal from './PasswordModal';
 
+// Add fontSizeTimeout to window for state persistence
+declare global {
+  interface Window {
+    fontSizeTimeout?: NodeJS.Timeout;
+  }
+}
+
 // Styled components
 const Container = styled.div`
   width: 100%;
@@ -182,11 +189,12 @@ interface SettingsProps {
   // Add any props needed
 }
 
+// Define font sizes with explicit pixel values for consistency
 const FONT_SIZES = [
-  { label: 'Small', value: '0.9rem' },
-  { label: 'Medium', value: '1rem' },
-  { label: 'Large', value: '1.1rem' },
-  { label: 'Extra Large', value: '1.2rem' }
+  { label: 'Small', value: '14px', id: 'small' },
+  { label: 'Medium', value: '16px', id: 'medium' },
+  { label: 'Large', value: '18px', id: 'large' },
+  { label: 'Extra Large', value: '20px', id: 'xlarge' }
 ];
 
 const FONT_FAMILIES = [
@@ -209,7 +217,7 @@ const Settings: React.FC<SettingsProps> = () => {
   const themeContext = useContext(ThemeContext);
   
   // State for settings
-  const [fontSize, setFontSize] = useState('1rem');
+  const [fontSize, setFontSize] = useState('16px');
   const [fontFamily, setFontFamily] = useState('"Space Grotesk", sans-serif');
   const [themeName, setThemeName] = useState('warm');
   
@@ -223,23 +231,63 @@ const Settings: React.FC<SettingsProps> = () => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('Loading font settings...');
+        
         // Check if there are settings saved
         const savedSettings = localStorage.getItem('century_user_settings');
         
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
-          setFontSize(parsedSettings.fontSize || '1rem');
+          console.log('Saved settings found:', parsedSettings);
+          
+          // Validate font size against available options
+          let loadedFontSize = parsedSettings.fontSize || '16px'; // Default to Medium
+          
+          // Find the matching font size in our options
+          const matchingFont = FONT_SIZES.find(fs => fs.value === loadedFontSize);
+          if (!matchingFont) {
+            // If not found or using old rem values, convert to our new system
+            console.warn('Converting old font size to new system:', loadedFontSize);
+            
+            // Map old rem values to new pixel values
+            if (loadedFontSize === '0.9rem') loadedFontSize = '14px';
+            else if (loadedFontSize === '1rem') loadedFontSize = '16px';
+            else if (loadedFontSize === '1.1rem') loadedFontSize = '18px';
+            else if (loadedFontSize === '1.2rem') loadedFontSize = '20px';
+            else loadedFontSize = '16px'; // Default to Medium
+            
+            console.log('Converted to:', loadedFontSize);
+          }
+          
+          // Set state values
+          console.log('Setting font size to:', loadedFontSize);
+          setFontSize(loadedFontSize);
           setFontFamily(parsedSettings.fontFamily || '"Space Grotesk", sans-serif');
           
-          // Apply loaded settings
-          document.documentElement.style.setProperty('--font-size', parsedSettings.fontSize || '1rem');
-          document.documentElement.style.setProperty('--font-family', parsedSettings.fontFamily || '"Space Grotesk", sans-serif');
-          applyFontVariables(); // Apply via stylesheet for better coverage
+          // Apply the styles after state is set with a slightly longer timeout
+          if (window.fontSizeTimeout) {
+            clearTimeout(window.fontSizeTimeout);
+          }
+          window.fontSizeTimeout = setTimeout(() => {
+            console.log('Applying loaded font settings...');
+            if (parsedSettings) {
+              applyFontVariables(loadedFontSize, parsedSettings.fontFamily || '"Space Grotesk", sans-serif');
+            }
+          }, 100);
         } else {
           // Set defaults if no settings found
-          document.documentElement.style.setProperty('--font-size', '1rem');
-          document.documentElement.style.setProperty('--font-family', '"Space Grotesk", sans-serif');
-          applyFontVariables(); // Apply via stylesheet for better coverage
+          console.log('No saved settings, using defaults');
+          setFontSize('16px'); // Medium
+          setFontFamily('"Space Grotesk", sans-serif');
+          
+          // Apply default styles after state is set
+          if (window.fontSizeTimeout) {
+            clearTimeout(window.fontSizeTimeout);
+          }
+          window.fontSizeTimeout = setTimeout(() => {
+            console.log('Applying default font settings...');
+            applyFontVariables('16px', '"Space Grotesk", sans-serif');
+          }, 100);
         }
         
         // Get the current theme from ThemeContext
@@ -252,6 +300,13 @@ const Settings: React.FC<SettingsProps> = () => {
     };
 
     loadSettings();
+    
+    // Clean up timeout on unmount
+    return () => {
+      if (window.fontSizeTimeout) {
+        clearTimeout(window.fontSizeTimeout);
+      }
+    };
   }, [themeContext]);
 
 
@@ -273,14 +328,29 @@ const Settings: React.FC<SettingsProps> = () => {
   // Handle font size change - apply and save immediately
   const handleFontSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFontSize = e.target.value;
-    setFontSize(newFontSize);
     
-    // Apply immediately
-    document.documentElement.style.setProperty('--font-size', newFontSize);
-    applyFontVariables(); // Apply via stylesheet for better coverage
+    // Clear any existing timeouts
+    if (window.fontSizeTimeout) {
+      clearTimeout(window.fontSizeTimeout);
+    }
     
-    // Save to localStorage
-    saveSettingToLocalStorage('fontSize', newFontSize);
+    console.log('Font size changing from', fontSize, 'to', newFontSize);
+    
+    // Ensure we're setting a valid font size
+    const fontSizeOption = FONT_SIZES.find(fs => fs.value === newFontSize);
+    if (fontSizeOption) {
+      // Update state
+      setFontSize(newFontSize);
+      
+      // Log the exact state changes for debugging
+      console.log(`Font size selected: ${fontSizeOption.label} (${fontSizeOption.value}, ID: ${fontSizeOption.id})`);
+      
+      // Apply and save immediately
+      applyFontVariables(newFontSize, fontFamily);
+      saveSettingToLocalStorage('fontSize', newFontSize);
+    } else {
+      console.error('Invalid font size selected:', newFontSize);
+    }
   };
 
   // Handle font family change - apply and save immediately
@@ -289,8 +359,7 @@ const Settings: React.FC<SettingsProps> = () => {
     setFontFamily(newFontFamily);
     
     // Apply immediately
-    document.documentElement.style.setProperty('--font-family', newFontFamily);
-    applyFontVariables(); // Apply via stylesheet for better coverage
+    applyFontVariables(fontSize, newFontFamily);
     
     // Save to localStorage
     saveSettingToLocalStorage('fontFamily', newFontFamily);
@@ -313,28 +382,49 @@ const Settings: React.FC<SettingsProps> = () => {
     }
   };
   
-  // Apply font variables by injecting a style tag for better compatibility
-  const applyFontVariables = () => {
+  // Apply font variables by directly setting styles for better consistency
+  const applyFontVariables = (size: string, family: string) => {
+    console.log(`Applying font size: ${size}, family: ${family}`);
+    
     // Remove existing font-variable style if it exists
     const existingStyle = document.getElementById('century-font-variables');
     if (existingStyle) {
       existingStyle.remove();
     }
     
-    // Create a new style element
+    // Create a new style element with a higher specificity approach
     const style = document.createElement('style');
     style.id = 'century-font-variables';
     style.textContent = `
-      html {
-        font-size: ${fontSize} !important;
+      html, body {
+        font-size: ${size} !important;
       }
+      
+      html *, body * {
+        font-size: inherit;
+      }
+      
       body, #root, .app, button, input, textarea, select, div, p, span, a, h1, h2, h3, h4, h5, h6 {
-        font-family: ${fontFamily} !important;
+        font-family: ${family} !important;
+      }
+      
+      /* Override any conflicting styles with high specificity */
+      html body#root,
+      html[data-theme] body,
+      #root[class],
+      body[class] {
+        font-size: ${size} !important;
       }
     `;
     
     // Add to document head
     document.head.appendChild(style);
+    
+    // Also update data attribute for debugging
+    document.documentElement.setAttribute('data-font-size', size);
+    
+    // For debugging
+    console.log(`Applied font size: ${size}`);
   };
 
   // Handle delete account confirmation
@@ -409,7 +499,11 @@ const Settings: React.FC<SettingsProps> = () => {
           </SettingLabel>
           <SettingControl>
             <SelectWrapper>
-              <StyledSelect value={fontSize} onChange={handleFontSizeChange}>
+              <StyledSelect 
+                value={fontSize} 
+                onChange={handleFontSizeChange}
+              >
+                {/* Render font size options in their defined order */}
                 {FONT_SIZES.map(size => (
                   <option key={size.value} value={size.value}>
                     {size.label}
