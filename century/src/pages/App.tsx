@@ -16,6 +16,8 @@ const AppContainer = styled.div`
   background-color: ${({ theme }) => theme.background};
   color: ${({ theme }) => theme.foreground};
   transition: all 0.3s ease;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
 `;
 
 const Header = styled.header`

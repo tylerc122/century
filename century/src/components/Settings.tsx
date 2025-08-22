@@ -117,14 +117,7 @@ const Button = styled.button`
   font-size: 0.95rem;
 `;
 
-const PrimaryButton = styled(Button)`
-  background-color: ${({ theme }) => theme.primary};
-  color: white;
-  
-  &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
-  }
-`;
+
 
 const DangerButton = styled(Button)`
   background-color: ${({ theme }) => theme.danger || '#e53935'};
@@ -197,11 +190,11 @@ const FONT_SIZES = [
 ];
 
 const FONT_FAMILIES = [
-  { label: 'System Default', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' },
+  { label: 'Default (Social Haus)', value: '"Space Grotesk", sans-serif' },
+  { label: 'System Sans-Serif', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' },
   { label: 'Serif', value: 'Georgia, "Times New Roman", Times, serif' },
   { label: 'Sans Serif', value: 'Arial, Helvetica, sans-serif' },
   { label: 'Monospace', value: '"Courier New", Courier, monospace' },
-  { label: 'Space Grotesk', value: '"Space Grotesk", sans-serif' },
 ];
 
 const AVAILABLE_THEMES = [
@@ -217,7 +210,7 @@ const Settings: React.FC<SettingsProps> = () => {
   
   // State for settings
   const [fontSize, setFontSize] = useState('1rem');
-  const [fontFamily, setFontFamily] = useState('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+  const [fontFamily, setFontFamily] = useState('"Space Grotesk", sans-serif');
   const [themeName, setThemeName] = useState('warm');
   
   // State for modals/dialogs
@@ -236,16 +229,22 @@ const Settings: React.FC<SettingsProps> = () => {
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
           setFontSize(parsedSettings.fontSize || '1rem');
-          setFontFamily(parsedSettings.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
-          setThemeName(parsedSettings.themeName || 'warm');
+          setFontFamily(parsedSettings.fontFamily || '"Space Grotesk", sans-serif');
           
           // Apply loaded settings
           document.documentElement.style.setProperty('--font-size', parsedSettings.fontSize || '1rem');
-          document.documentElement.style.setProperty('--font-family', parsedSettings.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+          document.documentElement.style.setProperty('--font-family', parsedSettings.fontFamily || '"Space Grotesk", sans-serif');
+          applyFontVariables(); // Apply via stylesheet for better coverage
         } else {
           // Set defaults if no settings found
           document.documentElement.style.setProperty('--font-size', '1rem');
-          document.documentElement.style.setProperty('--font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+          document.documentElement.style.setProperty('--font-family', '"Space Grotesk", sans-serif');
+          applyFontVariables(); // Apply via stylesheet for better coverage
+        }
+        
+        // Get the current theme from ThemeContext
+        if (themeContext && themeContext.themeName) {
+          setThemeName(themeContext.themeName);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -253,55 +252,89 @@ const Settings: React.FC<SettingsProps> = () => {
     };
 
     loadSettings();
-  }, []);
+  }, [themeContext]);
 
-  // Save settings to localStorage
-  const saveSettings = () => {
-    try {
-      const settings = {
-        fontSize,
-        fontFamily,
-        themeName
-      };
-      
-      localStorage.setItem('century_user_settings', JSON.stringify(settings));
-      
-      // Apply settings
-      document.documentElement.style.setProperty('--font-size', fontSize);
-      document.documentElement.style.setProperty('--font-family', fontFamily);
-      
-        // Apply theme
-  if (themeContext) {
-    themeContext.setTheme(themeName);
-  }
-      
-      // Show feedback
-      alert('Settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('Failed to save settings');
-    }
-  };
 
-  // Handle theme change
+
+  // Handle theme change - apply and save immediately
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTheme = e.target.value;
     setThemeName(newTheme);
     
-    // If we have direct access to the theme context's setTheme function, use it
+    // Apply theme change immediately
     if (themeContext && themeContext.setTheme) {
       themeContext.setTheme(newTheme);
     }
+    
+    // Save to localStorage
+    saveSettingToLocalStorage('themeName', newTheme);
   };
 
-  // Handle font size change
+  // Handle font size change - apply and save immediately
   const handleFontSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFontSize(e.target.value);
+    const newFontSize = e.target.value;
+    setFontSize(newFontSize);
+    
+    // Apply immediately
+    document.documentElement.style.setProperty('--font-size', newFontSize);
+    applyFontVariables(); // Apply via stylesheet for better coverage
+    
+    // Save to localStorage
+    saveSettingToLocalStorage('fontSize', newFontSize);
   };
 
-  // Handle font family change
+  // Handle font family change - apply and save immediately
   const handleFontFamilyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFontFamily(e.target.value);
+    const newFontFamily = e.target.value;
+    setFontFamily(newFontFamily);
+    
+    // Apply immediately
+    document.documentElement.style.setProperty('--font-family', newFontFamily);
+    applyFontVariables(); // Apply via stylesheet for better coverage
+    
+    // Save to localStorage
+    saveSettingToLocalStorage('fontFamily', newFontFamily);
+  };
+  
+  // Helper function to save individual settings
+  const saveSettingToLocalStorage = (settingName: string, value: string) => {
+    try {
+      // Get current settings or initialize empty object
+      const savedSettings = localStorage.getItem('century_user_settings');
+      const settings = savedSettings ? JSON.parse(savedSettings) : {};
+      
+      // Update the specific setting
+      settings[settingName] = value;
+      
+      // Save back to localStorage
+      localStorage.setItem('century_user_settings', JSON.stringify(settings));
+    } catch (error) {
+      console.error(`Error saving ${settingName} setting:`, error);
+    }
+  };
+  
+  // Apply font variables by injecting a style tag for better compatibility
+  const applyFontVariables = () => {
+    // Remove existing font-variable style if it exists
+    const existingStyle = document.getElementById('century-font-variables');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    
+    // Create a new style element
+    const style = document.createElement('style');
+    style.id = 'century-font-variables';
+    style.textContent = `
+      html {
+        font-size: ${fontSize} !important;
+      }
+      body, #root, .app, button, input, textarea, select, div, p, span, a, h1, h2, h3, h4, h5, h6 {
+        font-family: ${fontFamily} !important;
+      }
+    `;
+    
+    // Add to document head
+    document.head.appendChild(style);
   };
 
   // Handle delete account confirmation
@@ -407,10 +440,7 @@ const Settings: React.FC<SettingsProps> = () => {
           </SettingControl>
         </SettingRow>
         
-        <SettingRow>
-          <SettingLabel>Apply Changes</SettingLabel>
-          <PrimaryButton onClick={saveSettings}>Save Settings</PrimaryButton>
-        </SettingRow>
+
       </SettingsSection>
 
       <SettingsSection>
