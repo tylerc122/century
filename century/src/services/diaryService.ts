@@ -53,10 +53,13 @@ class DiaryStorage {
     }
     
     const lowercaseQuery = query.toLowerCase();
-    return this.entries.filter(entry => 
-      entry.title.toLowerCase().includes(lowercaseQuery) ||
-      entry.content.toLowerCase().includes(lowercaseQuery)
-    );
+    return this.entries.filter(entry => {
+      // Exclude locked entries from search results
+      if (entry.isLocked) return false;
+      
+      return entry.title.toLowerCase().includes(lowercaseQuery) ||
+             entry.content.toLowerCase().includes(lowercaseQuery);
+    });
   }
   
   // Sort entries by criteria
