@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import diaryService from '../services/diaryService';
+import diaryService, { UserStats } from '../services/diaryService';
 import { DiaryEntry } from '../types';
 
 // Styled components
@@ -413,10 +413,13 @@ const CalendarGrid = styled.div`
   max-height: 500px;
 `;
 
-const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean }>`
+const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean; isRetroactive?: boolean }>`
   background-color: ${props => {
     if (props.isEmpty) return 'transparent';
-    if (props.active) return props.theme.primary;
+    if (props.active) {
+      // Use a lighter color for retroactive entries
+      return props.isRetroactive ? props.theme.primary + '80' : props.theme.primary;
+    }
     return props.theme.border;
   }};
   border-radius: 4px;
@@ -447,6 +450,18 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
       z-index: 5;
     `}
   }
+  
+  /* Add star icon indicator for retroactive entries */
+  ${props => props.isRetroactive && `
+    &::after {
+      content: '\u2605';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 8px;
+      color: ${props.theme.light};
+    }
+  `}
 `;
 
 const LoadingMessage = styled.div`
@@ -516,11 +531,12 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<UserStats>({
     totalEntries: 0,
     totalWords: 0,
     currentStreak: 0,
     activityCalendar: Array(28).fill(false),
+    retroactiveActivity: Array(28).fill(false),
     mostFrequentWord: 'None',
     totalMediaUploaded: 0,
     favoriteEntries: [] as DiaryEntry[]
@@ -542,7 +558,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       try {
         setIsLoading(true);
         const userStats = await diaryService.getUserStats();
-        setStats(userStats);
+        setStats({ ...userStats, retroactiveActivity: userStats.retroactiveActivity || Array(28).fill(false) });
         
         // Convert activity calendar to map for easier date lookups
         const activityMap: Record<string, boolean> = {};
@@ -724,12 +740,24 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       const isActive = activityData[dateString] || false;
       const todayCheck = isToday(date);
       
+      // Check if this entry is retroactive
+      const calDateString = date.toISOString().split('T')[0];
+      const isRetroactive = stats.retroactiveActivity[stats.activityCalendar.findIndex(
+        (_, index) => {
+          const checkDate = new Date();
+          checkDate.setDate(checkDate.getDate() - index);
+          checkDate.setHours(0, 0, 0, 0);
+          return checkDate.toISOString().split('T')[0] === calDateString;
+        }
+      )];
+
       days.push(
         <CalendarDay 
           key={`day-${i}`} 
           active={isActive}
           isToday={todayCheck}
-          title={`${date.toLocaleDateString()} ${isActive ? '- Entry added' : ''}`}
+          isRetroactive={isActive && isRetroactive}
+          title={`${date.toLocaleDateString()} ${isActive ? isRetroactive ? '- Entry added retroactively' : '- Entry added' : ''}`}
           onMouseEnter={isActive ? (e) => handleDayHover(date, e) : undefined}
           onMouseLeave={isActive ? handleDayLeave : undefined}
           onClick={isActive ? () => handleDayClick(date) : undefined}

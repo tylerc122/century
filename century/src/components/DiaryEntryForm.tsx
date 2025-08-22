@@ -139,11 +139,11 @@ const SaveButton = styled(Button)`
 `;
 
 const DeleteButton = styled(Button)`
-  background-color: ${({ theme }) => theme.error || '#e53935'};
+  background-color: ${({ theme }) => theme.danger || '#e53935'};
   color: white;
   
   &:hover {
-    background-color: ${({ theme }) => theme.error ? theme.error + 'dd' : '#c62828'};
+    background-color: ${({ theme }) => theme.danger ? theme.danger + 'dd' : '#c62828'};
   }
 `;
 
@@ -301,13 +301,17 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
         title,
         content,
         date: selectedDate,
+        createdAt: new Date(), // Set creation date to now
         images,
         isLocked,
-        isFavorite
+        isFavorite,
+        isRetroactive: false // Will be determined by the service
       };
 
       if (entry?.id) {
         entryData.id = entry.id;
+        entryData.createdAt = entry.createdAt; // Preserve original creation date
+        entryData.isRetroactive = entry.isRetroactive; // Preserve retroactive status
         await diaryService.updateEntry(entryData as DiaryEntry);
       } else {
         await diaryService.addEntry(entryData);
@@ -360,7 +364,14 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
     <Overlay onClick={onCancel}>
       <FormContainer onClick={e => e.stopPropagation()}>
         <FormHeader>
-          <FormTitle>{entry ? 'Edit Entry' : 'New Entry'}</FormTitle>
+          <FormTitle>
+            {entry ? 'Edit Entry' : 'New Entry'}
+            {entry?.isRetroactive && (
+              <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', color: '#888' }}>
+                (Added retroactively)
+              </span>
+            )}
+          </FormTitle>
         </FormHeader>
         
         <FormContent>

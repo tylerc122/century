@@ -101,8 +101,10 @@ class DiaryStorage {
       const updatedEntry: DiaryEntry = {
         ...entry,
         id: existingEntry.id,
+        createdAt: existingEntry.createdAt,
         isLocked: entry.isLocked || existingEntry.isLocked || false,
-        isFavorite: entry.isFavorite || existingEntry.isFavorite || false
+        isFavorite: entry.isFavorite || existingEntry.isFavorite || false,
+        isRetroactive: existingEntry.isRetroactive
       };
       
       this.entries = this.entries.map(e => 
@@ -113,12 +115,21 @@ class DiaryStorage {
       return updatedEntry;
     }
     
-    // Otherwise, add a new entry
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if the entry date is before today (retroactive entry)
+    const isRetroactive = entryDate.getTime() < today.getTime();
+    
+    // Add a new entry
     const newEntry: DiaryEntry = {
       ...entry,
       id: Date.now().toString(),
+      createdAt: now,
       isLocked: entry.isLocked || false,
-      isFavorite: entry.isFavorite || false
+      isFavorite: entry.isFavorite || false,
+      isRetroactive: isRetroactive
     };
     
     this.entries = [newEntry, ...this.entries];
@@ -144,15 +155,7 @@ class DiaryStorage {
   }
   
   // Calculate user statistics
-  getUserStats(): {
-    totalEntries: number;
-    totalWords: number;
-    currentStreak: number;
-    activityCalendar: boolean[];
-    mostFrequentWord: string;
-    totalMediaUploaded: number;
-    favoriteEntries: DiaryEntry[];
-  } {
+  getUserStats(): UserStats {
     // Calculate total entries
     const totalEntries = this.entries.length;
     
@@ -172,8 +175,11 @@ class DiaryStorage {
       (a, b) => b.date.getTime() - a.date.getTime()
     );
     
+    // Filter out retroactive entries for streak calculation
+    const validStreakEntries = sortedEntries.filter(entry => !entry.isRetroactive);
+    
     // Check if there's an entry for today
-    const hasEntryToday = sortedEntries.some(entry => {
+    const hasEntryToday = validStreakEntries.some(entry => {
       const entryDate = new Date(entry.date);
       entryDate.setHours(0, 0, 0, 0);
       return entryDate.getTime() === today.getTime();
@@ -186,7 +192,7 @@ class DiaryStorage {
       
       // Check consecutive days
       while (true) {
-        const hasEntryForDate = sortedEntries.some(entry => {
+        const hasEntryForDate = validStreakEntries.some(entry => {
           const entryDate = new Date(entry.date);
           entryDate.setHours(0, 0, 0, 0);
           return entryDate.getTime() === prevDate.getTime();
@@ -204,15 +210,26 @@ class DiaryStorage {
     // Create activity calendar for last 28 days
     const activityCalendar: boolean[] = Array(28).fill(false);
     
+    // Track retroactive entries separately to render them differently
+    const retroactiveActivity: boolean[] = Array(28).fill(false);
+    
     for (let i = 0; i < 28; i++) {
       const checkDate = new Date();
       checkDate.setHours(0, 0, 0, 0);
       checkDate.setDate(checkDate.getDate() - i);
       
+      // Check for any entry on this date
       activityCalendar[i] = sortedEntries.some(entry => {
         const entryDate = new Date(entry.date);
         entryDate.setHours(0, 0, 0, 0);
         return entryDate.getTime() === checkDate.getTime();
+      });
+      
+      // Check if there's a retroactive entry on this date
+      retroactiveActivity[i] = sortedEntries.some(entry => {
+        const entryDate = new Date(entry.date);
+        entryDate.setHours(0, 0, 0, 0);
+        return entryDate.getTime() === checkDate.getTime() && entry.isRetroactive;
       });
     }
     
@@ -264,6 +281,7 @@ class DiaryStorage {
       totalWords,
       currentStreak,
       activityCalendar,
+      retroactiveActivity,
       mostFrequentWord,
       totalMediaUploaded,
       favoriteEntries: favoriteEntries.slice(0, 5) // Limit to top 5 favorites
@@ -275,6 +293,18 @@ class DiaryStorage {
 const storage = new DiaryStorage();
 
 // Export diary service methods
+// Export the user stats interface to make it available elsewhere
+export interface UserStats {
+  totalEntries: number;
+  totalWords: number;
+  currentStreak: number;
+  activityCalendar: boolean[];
+  retroactiveActivity: boolean[];
+  mostFrequentWord: string;
+  totalMediaUploaded: number;
+  favoriteEntries: DiaryEntry[];
+}
+
 export const diaryService = {
   getAllEntries: async (): Promise<DiaryEntry[]> => {
     return storage.getAllEntries();
@@ -316,7 +346,7 @@ export const diaryService = {
     storage.deleteEntry(entryId);
   },
   
-  getUserStats: async () => {
+  getUserStats: async (): Promise<UserStats> => {
     return storage.getUserStats();
   }
 };

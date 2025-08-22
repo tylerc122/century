@@ -19,6 +19,7 @@ declare module 'styled-components' {
     navBackground: string;
     accent1?: string;
     accent2?: string;
+    error?: string;
   }
 }
 

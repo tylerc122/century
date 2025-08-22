@@ -1,11 +1,13 @@
 export interface DiaryEntry {
   id: string;
   date: Date;
+  createdAt: Date; // When the entry was actually created
   title: string;
   content: string;
   images: string[]; // Array of image URLs or paths (base64 encoded)
   isLocked: boolean; // Whether the entry is locked/private
   isFavorite: boolean; // Whether the entry is marked as favorite
+  isRetroactive: boolean; // Whether the entry was added after the date it represents
 }
 
 export interface UserProfile {
