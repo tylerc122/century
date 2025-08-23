@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, ChangeEvent } from 're
 import styled from 'styled-components';
 import diaryService, { UserStats } from '../services/diaryService';
 import { DiaryEntry } from '../types';
+import { supabase } from '../config/supabase';
 
 // Styled components
 const Container = styled.div`
@@ -617,9 +618,8 @@ const LockedContent = styled.div`
   padding: 10px 0;
 `;
 
-// Get the current date for the joined date if not available
+// Default joined date - will be replaced with actual user creation date
 const defaultJoinedDate = new Date();
-defaultJoinedDate.setMonth(defaultJoinedDate.getMonth() - 1); // Fallback to joined a month ago
 
 interface ProfileProps {
   onSelectEntry: (entry: DiaryEntry) => void;
@@ -637,7 +637,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
     favoriteEntries: [] as DiaryEntry[]
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [joinedDate] = useState(defaultJoinedDate);
+  const [joinedDate, setJoinedDate] = useState(defaultJoinedDate);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [activityData, setActivityData] = useState<Record<string, boolean>>({});
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -677,6 +677,12 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
         const profileData = await diaryService.getUserProfile();
         setUsername(profileData.username);
         setProfilePicture(profileData.profilePicture);
+        
+        // Get user creation date from auth
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.created_at) {
+          setJoinedDate(new Date(user.created_at));
+        }
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {

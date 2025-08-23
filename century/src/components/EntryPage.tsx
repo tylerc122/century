@@ -410,7 +410,8 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
     }
     try {
       const [year, month, day] = date.split('-').map(num => parseInt(num, 10));
-      const selectedDate = new Date(year, month - 1, day);
+      // Create date in local timezone to avoid timezone shifting
+      const selectedDate = new Date(year, month - 1, day, 12, 0, 0);
       
       // Reorganize images to put cover photos first
       // Create a map of current positions
