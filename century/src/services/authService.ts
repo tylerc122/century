@@ -2,7 +2,7 @@ import { UserProfileData } from "./diaryService";
 
 export interface SignupData {
   email: string;
-  username: string;
+  firstName: string;
   password: string;
   preferences?: {
     fontSize?: string;
@@ -18,7 +18,7 @@ export interface LoginData {
 
 export interface AuthUser {
   email: string;
-  username: string;
+  firstName: string;
   isAuthenticated: boolean;
 }
 
@@ -58,7 +58,7 @@ class AuthService {
       // In a real app, this would be an API call to create a user
       const newUser: AuthUser = {
         email: data.email,
-        username: data.username,
+        firstName: data.firstName,
         isAuthenticated: true
       };
       
@@ -67,7 +67,7 @@ class AuthService {
       
       // Save user profile data
       const userProfile: UserProfileData = {
-        username: data.username,
+        username: data.firstName, // Using firstName as the display name
         profilePicture: null
       };
       localStorage.setItem('century_user_profile', JSON.stringify(userProfile));
@@ -108,7 +108,7 @@ class AuthService {
       // Create user object
       const user: AuthUser = {
         email: data.email,
-        username: data.email.split('@')[0], // Use part of email as username
+        firstName: data.email.split('@')[0], // Use part of email as first name
         isAuthenticated: true
       };
       
