@@ -1,69 +1,95 @@
 import { DiaryEntry } from '../types';
+import { supabase } from '../config/supabase';
 
-// Simple in-memory storage with localStorage persistence
+// Supabase storage implementation
 class DiaryStorage {
-  private entries: DiaryEntry[] = [];
-  private readonly STORAGE_KEY = 'century_diary_entries';
-  private readonly USER_PROFILE_KEY = 'century_user_profile';
+  private cachedEntries: DiaryEntry[] | null = null;
   
   constructor() {
-    this.loadFromStorage();
+    // No need to preload data, we'll fetch from Supabase when needed
   }
   
-  // Load entries from localStorage
-  private loadFromStorage(): void {
-    try {
-      const savedData = localStorage.getItem(this.STORAGE_KEY);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        this.entries = Array.isArray(parsed) ? 
-          parsed.map(entry => ({
-            ...entry,
-            date: new Date(entry.date)
-          })) : [];
-      }
-    } catch (error) {
-      console.error('Error loading from storage:', error);
-      this.entries = [];
+  // Get current user ID
+  private async getUserId(): Promise<string> {
+    const { data } = await supabase.auth.getUser();
+    if (!data?.user) {
+      throw new Error('User not authenticated');
     }
+    return data.user.id;
   }
   
-  // Save entries to localStorage
-  private saveToStorage(): void {
-    try {
-      const serialized = JSON.stringify(this.entries.map(entry => ({
-        ...entry,
-        date: entry.date.toISOString()
-      })));
-      localStorage.setItem(this.STORAGE_KEY, serialized);
-    } catch (error) {
-      console.error('Error saving to storage:', error);
-    }
+  // Convert Supabase entry to DiaryEntry
+  private convertToDiaryEntry(entry: any): DiaryEntry {
+    return {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      date: new Date(entry.date),
+      createdAt: new Date(entry.created_at),
+      isLocked: entry.is_locked,
+      isFavorite: entry.is_favorite,
+      isRetroactive: entry.is_retroactive,
+      images: entry.images || []
+    };
   }
   
   // Get all entries
-  getAllEntries(): DiaryEntry[] {
-    return [...this.entries];
+  async getAllEntries(): Promise<DiaryEntry[]> {
+    try {
+      const userId = await this.getUserId();
+      
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Convert and cache entries
+      const entries = (data || []).map(entry => this.convertToDiaryEntry(entry));
+      this.cachedEntries = entries;
+      return entries;
+    } catch (error) {
+      console.error('Error getting all entries:', error);
+      return [];
+    }
   }
   
   // Search entries by query
-  searchEntries(query: string): DiaryEntry[] {
-    if (!query.trim()) {
-      return [...this.entries];
-    }
-    
-    const lowercaseQuery = query.toLowerCase();
-    return this.entries.filter(entry => {
-      // Exclude locked entries from search results
-      if (entry.isLocked) return false;
+  async searchEntries(query: string): Promise<DiaryEntry[]> {
+    try {
+      // If no query, return all entries
+      if (!query.trim()) {
+        return this.getAllEntries();
+      }
       
-      return entry.title.toLowerCase().includes(lowercaseQuery) ||
-             entry.content.toLowerCase().includes(lowercaseQuery);
-    });
+      const userId = await this.getUserId();
+      const lowercaseQuery = query.toLowerCase();
+      
+      // Get all entries first (Supabase doesn't have full text search in free tier)
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_locked', false);
+      
+      if (error) throw error;
+      
+      // Filter entries client-side
+      const entries = (data || []).map((entry: any) => this.convertToDiaryEntry(entry));
+      return entries.filter((entry: DiaryEntry) => {
+        return entry.title.toLowerCase().includes(lowercaseQuery) ||
+              entry.content.toLowerCase().includes(lowercaseQuery);
+      });
+    } catch (error) {
+      console.error('Error searching entries:', error);
+      return [];
+    }
   }
   
   // Sort entries by criteria
-  sortEntries(entries: DiaryEntry[], criteria: 'date' | 'title' | 'favorite', ascending: boolean = true): DiaryEntry[] {
+  async sortEntries(entries: DiaryEntry[], criteria: 'date' | 'title' | 'favorite', ascending: boolean = true): Promise<DiaryEntry[]> {
     return [...entries].sort((a, b) => {
       let comparison = 0;
       
@@ -84,62 +110,153 @@ class DiaryStorage {
   }
   
   // Get favorite entries
-  getFavoriteEntries(): DiaryEntry[] {
-    return this.entries.filter(entry => entry.isFavorite);
+  async getFavoriteEntries(): Promise<DiaryEntry[]> {
+    try {
+      const userId = await this.getUserId();
+      
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_favorite', true);
+      
+      if (error) throw error;
+      
+      return (data || []).map(entry => this.convertToDiaryEntry(entry));
+    } catch (error) {
+      console.error('Error getting favorite entries:', error);
+      return [];
+    }
   }
   
   // Add a new entry
-  addEntry(entry: Omit<DiaryEntry, 'id'>): DiaryEntry {
-    // Allow multiple entries per day - no longer checking for existing entries
-    const entryDate = new Date(entry.date);
-    entryDate.setHours(0, 0, 0, 0);
-    
-    const now = new Date();
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
-    
-    // Check if the entry date is before today (retroactive entry)
-    const isRetroactive = entryDate.getTime() < today.getTime();
-    
-    // Add a new entry
-    const newEntry: DiaryEntry = {
-      ...entry,
-      id: Date.now().toString(),
-      createdAt: now,
-      isLocked: entry.isLocked || false,
-      isFavorite: entry.isFavorite || false,
-      isRetroactive: isRetroactive
-    };
-    
-    this.entries = [newEntry, ...this.entries];
-    this.saveToStorage();
-    
-    return newEntry;
+  async addEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryEntry> {
+    try {
+      const userId = await this.getUserId();
+      const entryDate = new Date(entry.date);
+      entryDate.setHours(0, 0, 0, 0);
+      
+      const now = new Date();
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+      
+      // Check if the entry date is before today (retroactive entry)
+      const isRetroactive = entryDate.getTime() < today.getTime();
+      
+      // Insert entry into Supabase
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .insert({
+          user_id: userId,
+          title: entry.title,
+          content: entry.content,
+          date: entryDate.toISOString().split('T')[0],
+          created_at: now.toISOString(),
+          is_locked: entry.isLocked || false,
+          is_favorite: entry.isFavorite || false,
+          is_retroactive: isRetroactive,
+          images: entry.images || []
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create entry');
+      
+      // Convert to DiaryEntry format
+      const newEntry = this.convertToDiaryEntry(data);
+      
+      // Update cache if we have one
+      if (this.cachedEntries) {
+        this.cachedEntries = [newEntry, ...this.cachedEntries];
+      }
+      
+      return newEntry;
+    } catch (error) {
+      console.error('Error adding entry:', error);
+      throw error;
+    }
   }
   
   // Update an existing entry
-  updateEntry(updatedEntry: DiaryEntry): DiaryEntry {
-    this.entries = this.entries.map(entry => 
-      entry.id === updatedEntry.id ? updatedEntry : entry
-    );
-    this.saveToStorage();
-    
-    return updatedEntry;
+  async updateEntry(updatedEntry: DiaryEntry): Promise<DiaryEntry> {
+    try {
+      const userId = await this.getUserId();
+      
+      // Convert dates to ISO strings for Supabase
+      const entryDate = new Date(updatedEntry.date);
+      entryDate.setHours(0, 0, 0, 0);
+      
+      // Update entry in Supabase
+      const { error } = await supabase
+        .from('diary_entries')
+        .update({
+          title: updatedEntry.title,
+          content: updatedEntry.content,
+          date: entryDate.toISOString().split('T')[0],
+          is_locked: updatedEntry.isLocked,
+          is_favorite: updatedEntry.isFavorite,
+          is_retroactive: updatedEntry.isRetroactive,
+          images: updatedEntry.images
+        })
+        .eq('id', updatedEntry.id)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      // Update cache if we have one
+      if (this.cachedEntries) {
+        this.cachedEntries = this.cachedEntries.map(entry => 
+          entry.id === updatedEntry.id ? updatedEntry : entry
+        );
+      }
+      
+      return updatedEntry;
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      throw error;
+    }
   }
   
   // Delete an entry
-  deleteEntry(entryId: string): void {
-    this.entries = this.entries.filter(entry => entry.id !== entryId);
-    this.saveToStorage();
+  async deleteEntry(entryId: string): Promise<void> {
+    try {
+      const userId = await this.getUserId();
+      
+      // Delete entry from Supabase
+      const { error } = await supabase
+        .from('diary_entries')
+        .delete()
+        .eq('id', entryId)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      // Update cache if we have one
+      if (this.cachedEntries) {
+        this.cachedEntries = this.cachedEntries.filter(entry => entry.id !== entryId);
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      throw error;
+    }
   }
   
   // Calculate user statistics
-  getUserStats(): UserStats {
+  async getUserStats(): Promise<UserStats> {
+    // Make sure we have entries loaded
+    let entries: DiaryEntry[];
+    if (this.cachedEntries) {
+      entries = this.cachedEntries;
+    } else {
+      entries = await this.getAllEntries();
+    }
+    
     // Calculate total entries
-    const totalEntries = this.entries.length;
+    const totalEntries = entries.length;
     
     // Calculate total words
-    const totalWords = this.entries.reduce(
+    const totalWords = entries.reduce(
       (sum, entry) => sum + entry.content.split(/\s+/).filter(Boolean).length, 
       0
     );
@@ -150,7 +267,7 @@ class DiaryStorage {
     today.setHours(0, 0, 0, 0);
     
     // Sort entries by date (newest first)
-    const sortedEntries = [...this.entries].sort(
+    const sortedEntries = [...entries].sort(
       (a, b) => b.date.getTime() - a.date.getTime()
     );
     
@@ -225,13 +342,13 @@ class DiaryStorage {
     
     const wordCounts: Record<string, number> = {};
     
-    this.entries.forEach(entry => {
+    entries.forEach((entry: DiaryEntry) => {
       const words = entry.content.toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter(word => word.length > 2 && !fillerWords.has(word));
+        .filter((word: string) => word.length > 2 && !fillerWords.has(word));
         
-      words.forEach(word => {
+      words.forEach((word: string) => {
         wordCounts[word] = (wordCounts[word] || 0) + 1;
       });
     });
@@ -247,13 +364,13 @@ class DiaryStorage {
     });
     
     // Calculate total media uploaded
-    const totalMediaUploaded = this.entries.reduce(
+    const totalMediaUploaded = entries.reduce(
       (sum, entry) => sum + (entry.images ? entry.images.length : 0), 
       0
     );
     
     // Get favorite entries
-    const favoriteEntries = this.entries.filter(entry => entry.isFavorite);
+    const favoriteEntries = entries.filter(entry => entry.isFavorite);
     
     return {
       totalEntries,
@@ -308,11 +425,11 @@ export const diaryService = {
   },
   
   getEntriesByDate: async (date: Date): Promise<DiaryEntry[]> => {
-    const entries = storage.getAllEntries();
+    const entries = await storage.getAllEntries();
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
     
-    return entries.filter(entry => {
+    return entries.filter((entry: DiaryEntry) => {
       const entryDate = new Date(entry.date);
       entryDate.setHours(0, 0, 0, 0);
       return entryDate.getTime() === targetDate.getTime();
@@ -344,11 +461,28 @@ export const diaryService = {
   // User profile methods
   getUserProfile: async (): Promise<UserProfileData> => {
     try {
-      const savedData = localStorage.getItem(storage['USER_PROFILE_KEY']);
-      if (savedData) {
-        return JSON.parse(savedData);
+      // Get current user
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) {
+        throw new Error('User not authenticated');
       }
-      return { username: 'User', profilePicture: null };
+      
+      // Get profile from database
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('username, profile_picture')
+        .eq('user_id', authData.user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return { username: 'User', profilePicture: null };
+      }
+      
+      return { 
+        username: data.username, 
+        profilePicture: data.profile_picture 
+      };
     } catch (error) {
       console.error('Error loading user profile:', error);
       return { username: 'User', profilePicture: null };
@@ -357,11 +491,31 @@ export const diaryService = {
 
   updateUserProfile: async (profile: UserProfileData): Promise<UserProfileData> => {
     try {
-      localStorage.setItem(storage['USER_PROFILE_KEY'], JSON.stringify(profile));
+      // Get current user
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Update profile in database
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          username: profile.username,
+          profile_picture: profile.profilePicture,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', authData.user.id);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
+      
       return profile;
     } catch (error) {
       console.error('Error saving user profile:', error);
-      return profile;
+      throw error;
     }
   }
 };

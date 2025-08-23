@@ -1,4 +1,5 @@
-import { UserProfileData } from "./diaryService";
+// No longer need UserProfileData import as we're using Supabase directly
+import { supabase } from '../config/supabase';
 
 export interface SignupData {
   email: string;
@@ -17,21 +18,20 @@ export interface LoginData {
 }
 
 export interface AuthUser {
+  id: string;
   email: string;
   firstName: string;
   isAuthenticated: boolean;
 }
 
-// Simulated auth service for local storage (will be replaced with Supabase)
+// Supabase auth service
 class AuthService {
-  private readonly AUTH_USER_KEY = 'century_auth_user';
-  private readonly USER_SETTINGS_KEY = 'century_user_settings';
   
   // Check if user is authenticated
   async isAuthenticated(): Promise<boolean> {
     try {
-      const user = localStorage.getItem(this.AUTH_USER_KEY);
-      return !!user;
+      const { data } = await supabase.auth.getSession();
+      return !!data.session;
     } catch (error) {
       console.error('Error checking authentication:', error);
       return false;
@@ -41,9 +41,21 @@ class AuthService {
   // Get current user
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const userData = localStorage.getItem(this.AUTH_USER_KEY);
-      if (userData) {
-        return JSON.parse(userData);
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        // Get user profile data from database
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('username')
+          .eq('user_id', data.user.id)
+          .single();
+          
+        return {
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: profileData?.username || data.user.email?.split('@')[0] || '',
+          isAuthenticated: true
+        };
       }
       return null;
     } catch (error) {
@@ -55,35 +67,41 @@ class AuthService {
   // Sign up new user
   async signup(data: SignupData): Promise<AuthUser> {
     try {
-      // In a real app, this would be an API call to create a user
-      const newUser: AuthUser = {
+      // Create auth user in Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
+        password: data.password
+      });
+      
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
+      
+      // Create user profile record
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: authData.user.id,
+          username: data.firstName,
+          profile_picture: null,
+          font_size: data.preferences?.fontSize || null,
+          font_family: data.preferences?.fontFamily || null,
+          theme_name: data.preferences?.themeName || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // Continue anyway, as the auth user was created successfully
+      }
+      
+      // Return the new user object
+      const newUser: AuthUser = {
+        id: authData.user.id,
+        email: authData.user.email || '',
         firstName: data.firstName,
         isAuthenticated: true
       };
-      
-      // Save user auth data
-      localStorage.setItem(this.AUTH_USER_KEY, JSON.stringify(newUser));
-      
-      // Save user profile data
-      const userProfile: UserProfileData = {
-        username: data.firstName, // Using firstName as the display name
-        profilePicture: null
-      };
-      localStorage.setItem('century_user_profile', JSON.stringify(userProfile));
-      
-      // Save user preferences if provided
-      if (data.preferences) {
-        const currentSettings = localStorage.getItem(this.USER_SETTINGS_KEY);
-        const settings = currentSettings ? JSON.parse(currentSettings) : {};
-        
-        // Merge with provided preferences
-        if (data.preferences.fontSize) settings.fontSize = data.preferences.fontSize;
-        if (data.preferences.fontFamily) settings.fontFamily = data.preferences.fontFamily;
-        if (data.preferences.themeName) settings.themeName = data.preferences.themeName;
-        
-        localStorage.setItem(this.USER_SETTINGS_KEY, JSON.stringify(settings));
-      }
       
       return newUser;
     } catch (error) {
@@ -95,25 +113,28 @@ class AuthService {
   // Login user
   async login(data: LoginData): Promise<AuthUser> {
     try {
-      // In a real app, this would validate credentials against a database
-      // For this mock version, we'll just check if the email is valid format
-      if (!this.validateEmail(data.email)) {
-        throw new Error('Invalid email format');
-      }
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
+      });
       
-      if (data.password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
+      if (error) throw error;
+      if (!authData.user) throw new Error('Login failed');
+      
+      // Get user profile data
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('username')
+        .eq('user_id', authData.user.id)
+        .single();
       
       // Create user object
       const user: AuthUser = {
-        email: data.email,
-        firstName: data.email.split('@')[0], // Use part of email as first name
+        id: authData.user.id,
+        email: authData.user.email || '',
+        firstName: profileData?.username || authData.user.email?.split('@')[0] || '',
         isAuthenticated: true
       };
-      
-      // Save to localStorage
-      localStorage.setItem(this.AUTH_USER_KEY, JSON.stringify(user));
       
       return user;
     } catch (error) {
@@ -125,18 +146,15 @@ class AuthService {
   // Logout user
   async logout(): Promise<void> {
     try {
-      localStorage.removeItem(this.AUTH_USER_KEY);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error('Error during logout:', error);
       throw error;
     }
   }
   
-  // Helper to validate email format
-  private validateEmail(email: string): boolean {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  }
+  // No longer need email validation as Supabase handles this
 }
 
 // Create singleton instance
