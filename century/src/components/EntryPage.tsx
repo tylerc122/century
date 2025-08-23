@@ -261,12 +261,14 @@ const ImagePreviewContainer = styled.div`
   margin-top: 1rem;
 `;
 
-const ImagePreview = styled.div`
+const ImagePreview = styled.div<{ isCover?: boolean }>`
   position: relative;
   width: 100%;
   padding-top: 100%; /* 1:1 Aspect Ratio */
   border-radius: 4px;
   overflow: hidden;
+  border: ${({ isCover }) => isCover ? '2px solid #f0b979' : 'none'};
+  box-shadow: ${({ isCover }) => isCover ? '0 0 8px rgba(240, 185, 121, 0.6)' : 'none'};
 `;
 
 const Image = styled.img`
@@ -298,11 +300,58 @@ const RemoveImageButton = styled.button`
   }
 `;
 
+const CoverBadge = styled.div`
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: rgba(240, 185, 121, 0.85);
+  color: white;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 10px;
+  font-weight: bold;
+`;
+
+const ImageActionButtons = styled.div`
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  
+  ${ImagePreview}:hover & {
+    opacity: 1;
+  }
+`;
+
+const ImageActionButton = styled.button`
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+`;
+
 const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [date, setDate] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [coverPhotos, setCoverPhotos] = useState<number[]>([0]); // Track cover photo indices (up to 4)
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   // Delete functionality removed from edit view
@@ -325,6 +374,16 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
       setImages(entry.images || []);
       setIsLocked(entry.isLocked || false);
       setIsFavorite(entry.isFavorite || false);
+      
+      // Initialize cover photos based on the saved entry
+      // Since cover photos are stored at the beginning of the images array,
+      // we need to identify how many there are (up to 4)
+      if (entry.images && entry.images.length > 0) {
+        // Assume the first images (up to 4) were cover photos
+        const coverCount = Math.min(entry.images.length, 4);
+        const initialCoverIndices = Array.from({ length: coverCount }, (_, i) => i);
+        setCoverPhotos(initialCoverIndices);
+      }
       
       // Check if entry is from today to enable editing
       const isToday = isEntryFromToday(entry);
@@ -353,12 +412,33 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
       const [year, month, day] = date.split('-').map(num => parseInt(num, 10));
       const selectedDate = new Date(year, month - 1, day);
       
+      // Reorganize images to put cover photos first
+      // Create a map of current positions
+      const imageMap = new Map<number, string>();
+      images.forEach((img, idx) => imageMap.set(idx, img));
+      
+      // Create the new order - cover photos first, then remaining images
+      const newImages: string[] = [];
+      
+      // Add cover photos in order
+      coverPhotos.sort((a, b) => a - b).forEach(index => {
+        if (imageMap.has(index)) {
+          newImages.push(imageMap.get(index)!);
+          imageMap.delete(index);
+        }
+      });
+      
+      // Add remaining images
+      imageMap.forEach((img) => {
+        newImages.push(img);
+      });
+      
       const entryData: Omit<DiaryEntry, 'id'> & { id?: string } = {
         title,
         content,
         date: selectedDate,
         createdAt: new Date(),
-        images,
+        images: newImages, // Use the reordered images
         isLocked,
         isFavorite,
         isRetroactive: false
@@ -397,12 +477,39 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
 
   const handleRemoveImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Update cover photo indices after removal
+    setCoverPhotos(prev => {
+      // Remove this index if it was a cover photo
+      const newCoverPhotos = prev.filter(i => i !== index)
+        // Adjust indices for photos after the removed one
+        .map(i => i > index ? i - 1 : i);
+      
+      return newCoverPhotos;
+    });
   };
 
   const triggerImageUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+  
+  const handleToggleCoverPhoto = (index: number) => {
+    setCoverPhotos(prev => {
+      // Check if image is already a cover photo
+      if (prev.includes(index)) {
+        // Remove it from cover photos
+        return prev.filter(i => i !== index);
+      } else if (prev.length < 4) {
+        // Add as a new cover photo if less than 4
+        return [...prev, index].sort((a, b) => a - b);
+      } else {
+        // Already have 4 cover photos, show message
+        alert('Maximum of 4 cover photos allowed');
+        return prev;
+      }
+    });
   };
   
   // Delete functionality moved to ViewEntryPage
@@ -473,7 +580,7 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
           </SidebarSection>
           
           <SidebarSection>
-            <SidebarTitle>Images</SidebarTitle>
+            <SidebarTitle>Images <span style={{fontSize: '0.8rem', fontWeight: 'normal'}}>(Select up to 4 cover photos)</span></SidebarTitle>
             <ImageUploadArea onClick={triggerImageUpload}>
               <UploadText>Click to add images</UploadText>
               <input 
@@ -489,9 +596,22 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
             {images.length > 0 && (
               <ImagePreviewContainer>
                 {images.map((image, index) => (
-                  <ImagePreview key={index}>
+                  <ImagePreview key={index} isCover={coverPhotos.includes(index)}>
                     <Image src={image} alt={`Image ${index + 1}`} />
                     <RemoveImageButton onClick={() => handleRemoveImage(index)}>×</RemoveImageButton>
+                    {coverPhotos.includes(index) && (
+                      <CoverBadge>
+                        Cover {coverPhotos.indexOf(index) + 1}
+                      </CoverBadge>
+                    )}
+                    <ImageActionButtons>
+                      <ImageActionButton 
+                        onClick={() => handleToggleCoverPhoto(index)}
+                        title={coverPhotos.includes(index) ? 'Remove from covers' : 'Set as cover'}
+                      >
+                        {coverPhotos.includes(index) ? '★' : '☆'}
+                      </ImageActionButton>
+                    </ImageActionButtons>
                   </ImagePreview>
                 ))}
               </ImagePreviewContainer>

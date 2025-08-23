@@ -244,7 +244,7 @@ const ImageActionButtons = styled.div`
   }
 `;
 
-const ImageActionButton = styled.button`
+const ImageActionButton = styled.button<{ disabled?: boolean }>`
   width: 24px;
   height: 24px;
   background-color: rgba(0, 0, 0, 0.5);
@@ -254,11 +254,12 @@ const ImageActionButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   font-size: 14px;
+  opacity: ${props => props.disabled ? '0.5' : '1'};
   
   &:hover {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: ${props => props.disabled ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.7)'};
   }
 `;
 
@@ -325,6 +326,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   const [images, setImages] = useState<string[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [coverPhotos, setCoverPhotos] = useState<number[]>([0]); // Track cover photo indices (up to 4)
   // Delete functionality removed from edit view
   const [canEdit, setCanEdit] = useState(true);
   const [showEditWarning, setShowEditWarning] = useState(false);
@@ -345,6 +347,16 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
       setImages(entry.images || []);
       setIsLocked(entry.isLocked || false);
       setIsFavorite(entry.isFavorite || false);
+      
+      // Initialize cover photos based on the saved entry
+      // Since cover photos are stored at the beginning of the images array,
+      // we need to identify how many there are (up to 4)
+      if (entry.images && entry.images.length > 0) {
+        // Assume the first images (up to 4) were cover photos
+        const coverCount = Math.min(entry.images.length, 4);
+        const initialCoverIndices = Array.from({ length: coverCount }, (_, i) => i);
+        setCoverPhotos(initialCoverIndices);
+      }
       
       // Check if entry is from today to enable editing
       const isToday = isEntryFromToday(entry);
@@ -377,12 +389,33 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
       // Create date with the correct year, month (0-indexed), and day
       const selectedDate = new Date(year, month - 1, day);
       
+      // Reorganize images to put cover photos first
+      // Create a map of current positions
+      const imageMap = new Map<number, string>();
+      images.forEach((img, idx) => imageMap.set(idx, img));
+      
+      // Create the new order - cover photos first, then remaining images
+      const newImages: string[] = [];
+      
+      // Add cover photos in order
+      coverPhotos.sort((a, b) => a - b).forEach(index => {
+        if (imageMap.has(index)) {
+          newImages.push(imageMap.get(index)!);
+          imageMap.delete(index);
+        }
+      });
+      
+      // Add remaining images
+      imageMap.forEach((img) => {
+        newImages.push(img);
+      });
+      
       const entryData: Omit<DiaryEntry, 'id'> & { id?: string } = {
         title,
         content,
         date: selectedDate,
         createdAt: new Date(), // Set creation date to now
-        images,
+        images: newImages, // Use the reordered images
         isLocked,
         isFavorite,
         isRetroactive: false // Will be determined by the service
@@ -420,17 +453,34 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   };
 
   const handleRemoveImage = (index: number) => {
+    // Remove the image
     setImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Update cover photo indices after removal
+    setCoverPhotos(prev => {
+      // Remove this index if it was a cover photo
+      const newCoverPhotos = prev.filter(i => i !== index)
+        // Adjust indices for photos after the removed one
+        .map(i => i > index ? i - 1 : i);
+      
+      return newCoverPhotos;
+    });
   };
   
   const handleSetCoverImage = (index: number) => {
-    setImages(prev => {
-      // Remove the selected image
-      const selectedImage = prev[index];
-      const filteredImages = prev.filter((_, i) => i !== index);
-      
-      // Add it back at the beginning
-      return [selectedImage, ...filteredImages];
+    setCoverPhotos(prev => {
+      // Check if image is already a cover photo
+      if (prev.includes(index)) {
+        // Remove it from cover photos
+        return prev.filter(i => i !== index);
+      } else if (prev.length < 4) {
+        // Add as a new cover photo if less than 4
+        return [...prev, index].sort((a, b) => a - b);
+      } else {
+        // Already have 4 cover photos, show message or handle differently
+        alert('Maximum of 4 cover photos allowed');
+        return prev;
+      }
     });
   };
   
@@ -447,6 +497,26 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
       }
       
       return newImages;
+    });
+    
+    // Update cover photo indices after moving
+    setCoverPhotos(prev => {
+      const updatedIndices = [...prev];
+      
+      // Update indices based on the move direction
+      if (direction === 'left' && index > 0) {
+        for (let i = 0; i < updatedIndices.length; i++) {
+          if (updatedIndices[i] === index) updatedIndices[i] = index - 1;
+          else if (updatedIndices[i] === index - 1) updatedIndices[i] = index;
+        }
+      } else if (direction === 'right' && index < images.length - 1) {
+        for (let i = 0; i < updatedIndices.length; i++) {
+          if (updatedIndices[i] === index) updatedIndices[i] = index + 1;
+          else if (updatedIndices[i] === index + 1) updatedIndices[i] = index;
+        }
+      }
+      
+      return updatedIndices;
     });
   };
 
@@ -519,7 +589,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
           </FormGroup>
           
           <FormGroup>
-            <Label>Images</Label>
+            <Label>Images <span style={{fontSize: '0.8rem', color: '#888'}}>(Select up to 4 cover photos)</span></Label>
             <ImageUploadArea onClick={triggerImageUpload}>
               <UploadText>Click to add images</UploadText>
               <input 
@@ -535,14 +605,23 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
             {images.length > 0 && (
               <ImagePreviewContainer>
                 {images.map((image, index) => (
-                  <ImagePreview key={index} isCover={index === 0}>
+                  <ImagePreview key={index} isCover={coverPhotos.includes(index)}>
                     <Image src={image} alt={`Image ${index + 1}`} />
-                    {index === 0 && <CoverBadge>Cover</CoverBadge>}
+                    {coverPhotos.includes(index) && (
+                      <CoverBadge>
+                        Cover {coverPhotos.indexOf(index) + 1}
+                      </CoverBadge>
+                    )}
                     <RemoveImageButton onClick={() => handleRemoveImage(index)}>×</RemoveImageButton>
                     <ImageActionButtons>
-                      {index > 0 && <ImageActionButton onClick={() => handleMoveImage(index, 'left')}>&larr;</ImageActionButton>}
-                      {index > 0 && <ImageActionButton onClick={() => handleSetCoverImage(index)}>★</ImageActionButton>}
-                      {index < images.length - 1 && <ImageActionButton onClick={() => handleMoveImage(index, 'right')}>&rarr;</ImageActionButton>}
+                      <ImageActionButton onClick={() => handleMoveImage(index, 'left')} disabled={index === 0}>&larr;</ImageActionButton>
+                      <ImageActionButton 
+                        onClick={() => handleSetCoverImage(index)}
+                        title={coverPhotos.includes(index) ? 'Remove from covers' : 'Set as cover'}
+                      >
+                        {coverPhotos.includes(index) ? '★' : '☆'}
+                      </ImageActionButton>
+                      <ImageActionButton onClick={() => handleMoveImage(index, 'right')} disabled={index === images.length - 1}>&rarr;</ImageActionButton>
                     </ImageActionButtons>
                   </ImagePreview>
                 ))}
