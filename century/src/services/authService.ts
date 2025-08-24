@@ -1,5 +1,6 @@
 // No longer need UserProfileData import as we're using Supabase directly
 import { supabase } from '../config/supabase';
+import storageService from './storageService';
 
 export interface SignupData {
   email: string;
@@ -148,6 +149,9 @@ class AuthService {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear all caches on logout
+      storageService.clearAllCaches();
     } catch (error) {
       console.error('Error during logout:', error);
       throw error;

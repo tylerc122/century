@@ -1,5 +1,6 @@
 import { DiaryEntry } from '../types';
 import { supabase } from '../config/supabase';
+import storageService from './storageService';
 
 // Supabase storage implementation
 class DiaryStorage {
@@ -40,6 +41,14 @@ class DiaryStorage {
   // Get all entries
   async getAllEntries(): Promise<DiaryEntry[]> {
     try {
+      // Check cache first
+      const cachedEntries = storageService.getCachedEntries();
+      if (cachedEntries && storageService.hasFreshCache()) {
+        console.log('Using cached entries');
+        this.cachedEntries = cachedEntries;
+        return cachedEntries;
+      }
+
       const userId = await this.getUserId();
       
       const { data, error } = await supabase
@@ -53,9 +62,20 @@ class DiaryStorage {
       // Convert and cache entries
       const entries = (data || []).map(entry => this.convertToDiaryEntry(entry));
       this.cachedEntries = entries;
+      
+      // Cache the entries locally
+      storageService.cacheEntries(entries);
+      
       return entries;
     } catch (error) {
       console.error('Error getting all entries:', error);
+      // Fallback to cache if available
+      const cachedEntries = storageService.getCachedEntries();
+      if (cachedEntries) {
+        console.log('Falling back to cached entries due to error');
+        this.cachedEntries = cachedEntries;
+        return cachedEntries;
+      }
       return [];
     }
   }
@@ -180,6 +200,12 @@ class DiaryStorage {
         this.cachedEntries = [newEntry, ...this.cachedEntries];
       }
       
+      // Update local storage cache
+      storageService.updateEntriesCache([newEntry]);
+      
+      // Clear stats cache since stats have changed
+      storageService.clearStatsCache();
+      
       return newEntry;
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -224,6 +250,12 @@ class DiaryStorage {
         );
       }
       
+      // Update local storage cache
+      storageService.updateEntriesCache([updatedEntry]);
+      
+      // Clear stats cache since stats have changed
+      storageService.clearStatsCache();
+      
       return updatedEntry;
     } catch (error) {
       console.error('Error updating entry:', error);
@@ -249,6 +281,12 @@ class DiaryStorage {
       if (this.cachedEntries) {
         this.cachedEntries = this.cachedEntries.filter(entry => entry.id !== entryId);
       }
+      
+      // Remove from local storage cache
+      storageService.removeEntryFromCache(entryId);
+      
+      // Clear stats cache since stats have changed
+      storageService.clearStatsCache();
     } catch (error) {
       console.error('Error deleting entry:', error);
       throw error;
@@ -257,6 +295,13 @@ class DiaryStorage {
   
   // Calculate user statistics
   async getUserStats(): Promise<UserStats> {
+    // Check cache first
+    const cachedStats = storageService.getCachedStats();
+    if (cachedStats) {
+      console.log('Using cached stats');
+      return cachedStats;
+    }
+
     // Make sure we have entries loaded
     let entries: DiaryEntry[];
     if (this.cachedEntries) {
@@ -468,7 +513,20 @@ export const diaryService = {
   },
   
   getUserStats: async (): Promise<UserStats> => {
-    return storage.getUserStats();
+    // Check cache first
+    const cachedStats = storageService.getCachedStats();
+    if (cachedStats) {
+      console.log('Using cached stats');
+      return cachedStats;
+    }
+
+    // Calculate stats from storage
+    const stats = await storage.getUserStats();
+    
+    // Cache the stats
+    storageService.cacheStats(stats);
+    
+    return stats;
   },
 
   // User profile methods
@@ -501,6 +559,8 @@ export const diaryService = {
       return { username: 'User', profilePicture: null };
     }
   },
+
+
 
   updateUserProfile: async (profile: UserProfileData): Promise<UserProfileData> => {
     try {
@@ -554,6 +614,10 @@ export const diaryService = {
           throw error;
         }
       }
+      
+      // Update cache after successful save
+      storageService.cacheProfile(profile);
+      
       return profile;
     } catch (error) {
       console.error('Error saving user profile:', error);

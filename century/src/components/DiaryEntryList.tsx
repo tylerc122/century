@@ -409,6 +409,8 @@ const LoadingMessage = styled.div`
   color: ${({ theme }) => theme.secondary};
 `;
 
+
+
 const EmptyMessage = styled.div`
   padding: 2rem;
   text-align: center;
@@ -466,6 +468,8 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       setIsLoading(false);
     }
   };
+
+
   
   const applyFiltersAndSort = async (
     entriesList: DiaryEntry[], 

@@ -4,6 +4,7 @@ import diaryService, { UserStats } from '../services/diaryService';
 import { DiaryEntry } from '../types';
 import { supabase } from '../config/supabase';
 import ProfilePictureEditor from './ProfilePictureEditor';
+import storageService from '../services/storageService';
 
 // Styled components
 const Container = styled.div`
@@ -153,6 +154,8 @@ const Username = styled.h2`
   margin: 0;
   padding-right: 25px;
 `;
+
+
 
 const UsernameInput = styled.input`
   font-size: 1.5rem;
@@ -718,10 +721,21 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
         setUsername(profileData.username);
         setProfilePicture(profileData.profilePicture);
         
-        // Get user creation date from auth
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.created_at) {
-          setJoinedDate(new Date(user.created_at));
+        // Get user creation date from auth (with caching)
+        const cachedAuthData = storageService.getCachedAuthData();
+        if (cachedAuthData) {
+          console.log('Using cached auth data');
+          setJoinedDate(new Date(cachedAuthData.createdAt));
+        } else {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.created_at) {
+            setJoinedDate(new Date(user.created_at));
+            // Cache the auth data
+            storageService.cacheAuthData({
+              userId: user.id,
+              createdAt: user.created_at
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -1016,6 +1030,8 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       setIsEditorOpen(true);
     }
   };
+
+
 
   if (isLoading) {
     return <LoadingMessage>Loading profile data...</LoadingMessage>;
