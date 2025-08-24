@@ -510,21 +510,50 @@ export const diaryService = {
         throw new Error('User not authenticated');
       }
       
-      // Update profile in database
-      const { error } = await supabase
+      // First check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .update({
-          username: profile.username,
-          profile_picture: profile.profilePicture,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', authData.user.id);
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single();
       
-      if (error) {
-        console.error('Error updating profile:', error);
-        throw error;
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error('Error checking existing profile:', checkError);
+        throw checkError;
       }
       
+      if (existingProfile) {
+        // Profile exists, update it
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({
+            username: profile.username,
+            profile_picture: profile.profilePicture,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', authData.user.id);
+        
+        if (error) {
+          console.error('Error updating profile:', error);
+          throw error;
+        }
+      } else {
+        // Profile doesn't exist, create it
+        const { error } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: authData.user.id,
+            username: profile.username,
+            profile_picture: profile.profilePicture,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) {
+          console.error('Error creating profile:', error);
+          throw error;
+        }
+      }
       return profile;
     } catch (error) {
       console.error('Error saving user profile:', error);

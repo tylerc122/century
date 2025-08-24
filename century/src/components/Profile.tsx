@@ -682,6 +682,17 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const calendarGridRef = useRef<HTMLDivElement | null>(null);
   const usernameInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Function to refresh profile data
+  const refreshProfileData = async () => {
+    try {
+      const profileData = await diaryService.getUserProfile();
+      setUsername(profileData.username);
+      setProfilePicture(profileData.profilePicture);
+    } catch (error) {
+      console.error('Failed to refresh profile data:', error);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -931,12 +942,23 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   
   const handleSaveUsername = async () => {
     if (tempUsername.trim() && tempUsername !== username) {
-      setUsername(tempUsername.trim());
-      // Save to storage
-      await diaryService.updateUserProfile({
-        username: tempUsername.trim(),
-        profilePicture
-      });
+      try {
+        // Save to storage
+        await diaryService.updateUserProfile({
+          username: tempUsername.trim(),
+          profilePicture
+        });
+        
+        // Update local state only after successful save
+        setUsername(tempUsername.trim());
+        
+        // Refresh profile data to ensure consistency
+        await refreshProfileData();
+      } catch (error) {
+        console.error('Failed to save username:', error);
+        // Revert the temporary username if save failed
+        setTempUsername(username);
+      }
     }
     setEditingUsername(false);
   };
@@ -961,15 +983,24 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
 
   // Handle saving the edited profile picture
   const handleSaveEditedPicture = async (croppedImage: string) => {
-    setProfilePicture(croppedImage);
-    setIsEditorOpen(false);
-    setTempImageForEditing(null);
-    
-    // Save to storage
-    await diaryService.updateUserProfile({
-      username,
-      profilePicture: croppedImage
-    });
+    try {
+      // Save to storage
+      await diaryService.updateUserProfile({
+        username,
+        profilePicture: croppedImage
+      });
+      
+      // Update local state only after successful save
+      setProfilePicture(croppedImage);
+      setIsEditorOpen(false);
+      setTempImageForEditing(null);
+      
+      // Refresh profile data to ensure consistency
+      await refreshProfileData();
+    } catch (error) {
+      console.error('Failed to save profile picture:', error);
+      // Keep the editor open if save failed
+    }
   };
 
   // Handle canceling the editor
