@@ -37,6 +37,12 @@ const Title = styled.h1`
   letter-spacing: 0.03em;
   opacity: 0.85;
   font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 1;
+  }
 `;
 
 const HeaderControls = styled.div`
@@ -140,7 +146,7 @@ function MainApp() {
   return (
     <AppContainer>
       <Header>
-        <Title>century</Title>
+        <Title onClick={() => setActiveView('entries')}>century</Title>
         <HeaderControls>
           <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
           <NewEntryButton onClick={() => {
