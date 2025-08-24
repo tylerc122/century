@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import diaryService, { UserStats } from '../services/diaryService';
 import { DiaryEntry } from '../types';
 import { supabase } from '../config/supabase';
+import ProfilePictureEditor from './ProfilePictureEditor';
 
 // Styled components
 const Container = styled.div`
@@ -56,6 +57,10 @@ const AvatarContainer = styled.div`
   width: 80px;
   height: 80px;
   margin-bottom: 0.5rem;
+  
+  &:hover .avatar-edit-overlay {
+    opacity: 1;
+  }
 `;
 
 const Avatar = styled.div<{ hasImage: boolean }>`
@@ -105,6 +110,28 @@ const AvatarEditButton = styled.label`
   svg {
     width: 16px;
     height: 16px;
+  }
+`;
+
+const AvatarEditOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: white;
   }
 `;
 
@@ -649,6 +676,8 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const [editingUsername, setEditingUsername] = useState<boolean>(false);
   const [tempUsername, setTempUsername] = useState<string>('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [tempImageForEditing, setTempImageForEditing] = useState<string | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarGridRef = useRef<HTMLDivElement | null>(null);
   const usernameInputRef = useRef<HTMLInputElement | null>(null);
@@ -921,16 +950,39 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       reader.onload = async (e) => {
         if (e.target?.result) {
           const imageDataUrl = e.target.result.toString();
-          setProfilePicture(imageDataUrl);
-          // Save to storage
-          await diaryService.updateUserProfile({
-            username,
-            profilePicture: imageDataUrl
-          });
+          setTempImageForEditing(imageDataUrl);
+          setIsEditorOpen(true);
         }
       };
       
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle saving the edited profile picture
+  const handleSaveEditedPicture = async (croppedImage: string) => {
+    setProfilePicture(croppedImage);
+    setIsEditorOpen(false);
+    setTempImageForEditing(null);
+    
+    // Save to storage
+    await diaryService.updateUserProfile({
+      username,
+      profilePicture: croppedImage
+    });
+  };
+
+  // Handle canceling the editor
+  const handleCancelEditor = () => {
+    setIsEditorOpen(false);
+    setTempImageForEditing(null);
+  };
+
+  // Handle editing existing profile picture
+  const handleEditExistingPicture = () => {
+    if (profilePicture) {
+      setTempImageForEditing(profilePicture);
+      setIsEditorOpen(true);
     }
   };
 
@@ -951,6 +1003,21 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
                   username.charAt(0).toUpperCase()
                 )}
               </Avatar>
+              
+              {/* Edit overlay for existing profile pictures */}
+              {profilePicture && (
+                <AvatarEditOverlay 
+                  className="avatar-edit-overlay"
+                  onClick={handleEditExistingPicture}
+                  title="Edit profile picture"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </AvatarEditOverlay>
+              )}
+              
               <AvatarEditButton htmlFor="profile-picture-upload">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -1164,6 +1231,16 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
           </StreakContainer>
         </RightColumn>
       </DesktopLayout>
+      
+      {/* Profile Picture Editor Modal */}
+      {tempImageForEditing && (
+        <ProfilePictureEditor
+          imageSrc={tempImageForEditing}
+          onSave={handleSaveEditedPicture}
+          onCancel={handleCancelEditor}
+          isOpen={isEditorOpen}
+        />
+      )}
     </Container>
   );
 };
