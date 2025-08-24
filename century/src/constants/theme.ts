@@ -7,22 +7,22 @@ export const FONT_SIZES = [
 ];
 
 export const FONT_FAMILIES = [
-  { label: 'Default (Space Grotesk)', value: '"Space Grotesk", sans-serif' },
-  { label: 'Satoshi', value: "'Satoshi', sans-serif" },
-  { label: 'Inter', value: "'Inter', sans-serif" },
-  { label: 'Geist Sans', value: "'Geist Sans', sans-serif" },
-  { label: 'Plus Jakarta Sans', value: "'Plus Jakarta Sans', sans-serif" },
-  { label: 'Manrope', value: "'Manrope', sans-serif" },
-  { label: 'Poppins', value: "'Poppins', sans-serif" },
-  { label: 'Playfair Display', value: "'Playfair Display', serif" },
-  { label: 'Roboto Slab', value: "'Roboto Slab', serif" },
-  { label: 'Lora', value: "'Lora', serif" },
-  { label: 'Dancing Script', value: "'Dancing Script', cursive" },
-  { label: 'Caveat', value: "'Caveat', cursive" },
+  { label: 'Default (Space Grotesk)', value: 'Space Grotesk, sans-serif' },
+  { label: 'Satoshi', value: 'Satoshi, sans-serif' },
+  { label: 'Inter', value: 'Inter, sans-serif' },
+  { label: 'Geist Sans', value: 'Geist Sans, sans-serif' },
+  { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans, sans-serif' },
+  { label: 'Manrope', value: 'Manrope, sans-serif' },
+  { label: 'Poppins', value: 'Poppins, sans-serif' },
+  { label: 'Playfair Display', value: 'Playfair Display, serif' },
+  { label: 'Roboto Slab', value: 'Roboto Slab, serif' },
+  { label: 'Lora', value: 'Lora, serif' },
+  { label: 'Dancing Script', value: 'Dancing Script, cursive' },
+  { label: 'Caveat', value: 'Caveat, cursive' },
   { label: 'System Sans-Serif', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' },
   { label: 'Serif', value: 'Georgia, "Times New Roman", Times, serif' },
   { label: 'Sans Serif', value: 'Arial, Helvetica, sans-serif' },
-  { label: 'Monospace', value: '"Courier New", Courier, monospace' },
+  { label: 'Monospace', value: 'Courier New, Courier, monospace' },
 ];
 
 export const AVAILABLE_THEMES = [

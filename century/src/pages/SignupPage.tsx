@@ -127,6 +127,17 @@ const DropdownHeader = styled.div`
   }
 `;
 
+// New styled component for font family dropdown header
+const FontDropdownHeader = styled(DropdownHeader)<{ fontFamily: string }>`
+  font-family: ${({ fontFamily }) => fontFamily};
+`;
+
+// New styled component for font size dropdown header
+const FontSizeDropdownHeader = styled(DropdownHeader)<{ fontSize: string }>`
+  font-size: ${({ fontSize }) => fontSize};
+  font-weight: 600;
+`;
+
 const DropdownMenu = styled.div`
   position: absolute;
   top: calc(100% + 5px);
@@ -172,6 +183,18 @@ const MenuItem = styled.div<{ active: boolean }>`
     margin-right: 8px;
     opacity: 0.8;
   }
+`;
+
+// New styled component for font preview items
+const FontMenuItem = styled(MenuItem)<{ fontFamily: string }>`
+  font-family: ${({ fontFamily }) => fontFamily};
+  font-size: 0.95rem;
+`;
+
+// New styled component for font size preview items
+const FontSizeMenuItem = styled(MenuItem)<{ fontSize: string }>`
+  font-size: ${({ fontSize }) => fontSize};
+  font-weight: 500;
 `;
 
 // Hidden select for accessibility
@@ -263,7 +286,7 @@ const SignupPage: React.FC = () => {
   
   // Step 2 - Preferences
   const [fontSize, setFontSize] = useState('16px');
-  const [fontFamily, setFontFamily] = useState('"Space Grotesk", sans-serif');
+  const [fontFamily, setFontFamily] = useState('Space Grotesk, sans-serif');
   const [themeName, setThemeName] = useState('warm');
   
   // Dropdown states
@@ -539,12 +562,15 @@ const SignupPage: React.FC = () => {
                   className="fontsize-dropdown" 
                   onClick={toggleFontSizeDropdown}
                 >
-                  <DropdownHeader className={fontSizeDropdownOpen ? 'open' : ''}>
+                  <FontSizeDropdownHeader 
+                    className={fontSizeDropdownOpen ? 'open' : ''} 
+                    fontSize={fontSize}
+                  >
                     {FONT_SIZES.find(f => f.value === fontSize)?.label || 'Select Size'}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
-                  </DropdownHeader>
+                  </FontSizeDropdownHeader>
                   
                   {/* Hidden accessible select for screen readers */}
                   <HiddenSelect 
@@ -561,16 +587,17 @@ const SignupPage: React.FC = () => {
                   {fontSizeDropdownOpen && (
                     <DropdownMenu>
                       {FONT_SIZES.map(size => (
-                        <MenuItem 
+                        <FontSizeMenuItem 
                           key={size.id}
                           active={fontSize === size.value} 
                           onClick={() => handleFontSizeSelect(size.value)}
+                          fontSize={size.value}
                         >
                           {fontSize === size.value && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>} 
                           {size.label}
-                        </MenuItem>
+                        </FontSizeMenuItem>
                       ))}
                     </DropdownMenu>
                   )}
@@ -583,12 +610,15 @@ const SignupPage: React.FC = () => {
                   className="fontfamily-dropdown" 
                   onClick={toggleFontFamilyDropdown}
                 >
-                  <DropdownHeader className={fontFamilyDropdownOpen ? 'open' : ''}>
-                    {FONT_FAMILIES.find(f => f.value === fontFamily)?.label || 'Select Font'}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </DropdownHeader>
+                                     <FontDropdownHeader 
+                     className={fontFamilyDropdownOpen ? 'open' : ''} 
+                     fontFamily={fontFamily}
+                   >
+                     {FONT_FAMILIES.find(f => f.value === fontFamily)?.label || 'Select Font'}
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                       <polyline points="6 9 12 15 18 9"></polyline>
+                     </svg>
+                   </FontDropdownHeader>
                   
                   {/* Hidden accessible select for screen readers */}
                   <HiddenSelect 
@@ -605,16 +635,17 @@ const SignupPage: React.FC = () => {
                   {fontFamilyDropdownOpen && (
                     <DropdownMenu>
                       {FONT_FAMILIES.map(font => (
-                        <MenuItem 
+                        <FontMenuItem 
                           key={font.label}
                           active={fontFamily === font.value} 
                           onClick={() => handleFontFamilySelect(font.value)}
+                          fontFamily={font.value}
                         >
                           {fontFamily === font.value && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>} 
                           {font.label}
-                        </MenuItem>
+                        </FontMenuItem>
                       ))}
                     </DropdownMenu>
                   )}
