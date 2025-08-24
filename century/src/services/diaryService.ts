@@ -20,11 +20,15 @@ class DiaryStorage {
   
   // Convert Supabase entry to DiaryEntry
   private convertToDiaryEntry(entry: any): DiaryEntry {
+    // Parse the date string and create a local date object
+    const [year, month, day] = entry.date.split('-').map((num: string) => parseInt(num, 10));
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    
     return {
       id: entry.id,
       title: entry.title,
       content: entry.content,
-      date: new Date(entry.date),
+      date: localDate,
       createdAt: new Date(entry.created_at),
       isLocked: entry.is_locked,
       isFavorite: entry.is_favorite,
@@ -133,15 +137,20 @@ class DiaryStorage {
   async addEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryEntry> {
     try {
       const userId = await this.getUserId();
+      
+      // Create a date object from the entry date and set it to local midnight
       const entryDate = new Date(entry.date);
-      entryDate.setHours(0, 0, 0, 0);
+      // Set to local midnight to avoid timezone issues
+      const localDate = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
       
       const now = new Date();
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       
       // Check if the entry date is before today (retroactive entry)
-      const isRetroactive = entryDate.getTime() < today.getTime();
+      const isRetroactive = localDate.getTime() < today.getTime();
+      
+      // Format date as YYYY-MM-DD in local timezone
+      const dateString = localDate.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format
       
       // Insert entry into Supabase
       const { data, error } = await supabase
@@ -150,7 +159,7 @@ class DiaryStorage {
           user_id: userId,
           title: entry.title,
           content: entry.content,
-          date: entryDate.toISOString().split('T')[0],
+          date: dateString,
           created_at: now.toISOString(),
           is_locked: entry.isLocked || false,
           is_favorite: entry.isFavorite || false,
@@ -183,9 +192,13 @@ class DiaryStorage {
     try {
       const userId = await this.getUserId();
       
-      // Convert dates to ISO strings for Supabase
+      // Create a date object from the entry date and set it to local midnight
       const entryDate = new Date(updatedEntry.date);
-      entryDate.setHours(0, 0, 0, 0);
+      // Set to local midnight to avoid timezone issues
+      const localDate = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+      
+      // Format date as YYYY-MM-DD in local timezone
+      const dateString = localDate.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format
       
       // Update entry in Supabase
       const { error } = await supabase
@@ -193,7 +206,7 @@ class DiaryStorage {
         .update({
           title: updatedEntry.title,
           content: updatedEntry.content,
-          date: entryDate.toISOString().split('T')[0],
+          date: dateString,
           is_locked: updatedEntry.isLocked,
           is_favorite: updatedEntry.isFavorite,
           is_retroactive: updatedEntry.isRetroactive,

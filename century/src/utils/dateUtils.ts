@@ -58,3 +58,18 @@ export const formatDate = (
       });
   }
 };
+
+/**
+ * Get timezone information for debugging
+ * @returns Object with timezone details
+ */
+export const getTimezoneInfo = () => {
+  const now = new Date();
+  return {
+    localTime: now.toLocaleString('en-US'),
+    utcTime: now.toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    offset: now.getTimezoneOffset(),
+    offsetHours: now.getTimezoneOffset() / 60
+  };
+};

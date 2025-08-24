@@ -240,7 +240,13 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
 
       <EntryContainer>
         <EntryTitle>{entry.title}</EntryTitle>
-        <EntryDate>{formatDate(new Date(entry.date))}</EntryDate>
+        <EntryDate>
+          {formatDate(new Date(entry.date))} • {entry.createdAt.toLocaleTimeString('en-US', { 
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })}
+        </EntryDate>
 
         <StatusBadges>
           {entry.isLocked && (

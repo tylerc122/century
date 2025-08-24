@@ -563,6 +563,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
               onChange={(e) => setDate(e.target.value)}
               disabled={!canEdit} 
             />
+
           </FormGroup>
           
           <FormGroup>
