@@ -121,7 +121,7 @@ const DropdownHeader = styled.div`
 
 // New styled component for font family dropdown header
 const FontDropdownHeader = styled(DropdownHeader)<{ fontFamily: string }>`
-  font-family: ${({ fontFamily }) => fontFamily};
+  font-family: ${({ fontFamily }) => fontFamily} !important; /* FIX: Added !important */
 `;
 
 // New styled component for font size dropdown header
@@ -186,7 +186,7 @@ const MenuItem = styled.div<{ active: boolean }>`
 
 // New styled component for font preview items
 const FontMenuItem = styled(MenuItem)<{ fontFamily: string }>`
-  font-family: ${({ fontFamily }) => fontFamily};
+  font-family: ${({ fontFamily }) => fontFamily} !important; /* FIX: Added !important */
   font-size: 0.95rem;
 `;
 
@@ -218,8 +218,6 @@ const Button = styled.button`
   transition: all 0.2s ease;
   font-size: 0.95rem;
 `;
-
-
 
 const DangerButton = styled(Button)`
   background-color: ${({ theme }) => theme.danger || '#e53935'};
@@ -711,7 +709,7 @@ const Settings: React.FC<SettingsProps> = () => {
               ref={fontSizeDropdownRef}
               onClick={() => toggleDropdown('fontSize', fontSizeDropdownRef, fontSizeDropdownOpen, setFontSizeDropdownOpen)}
             >
-                             <FontSizeDropdownHeader 
+               <FontSizeDropdownHeader 
                  className={fontSizeDropdownOpen ? 'open' : ''} 
                  fontSize={fontSize}
                >
@@ -732,7 +730,7 @@ const Settings: React.FC<SettingsProps> = () => {
                 ))}
               </HiddenSelect>
               
-                                {fontSizeDropdownOpen && (
+                {fontSizeDropdownOpen && (
                     <DropdownMenu className={positionDropdownsUp.fontSize ? 'position-top' : ''}>
                       {FONT_SIZES.map(size => (
                         <FontSizeMenuItem 
@@ -785,7 +783,7 @@ const Settings: React.FC<SettingsProps> = () => {
                 ))}
               </HiddenSelect>
               
-                                {fontFamilyDropdownOpen && (
+                {fontFamilyDropdownOpen && (
                     <DropdownMenu className={positionDropdownsUp.fontFamily ? 'position-top' : ''}>
                       {FONT_FAMILIES.map(font => (
                         <FontMenuItem 

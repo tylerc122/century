@@ -129,7 +129,7 @@ const DropdownHeader = styled.div`
 
 // New styled component for font family dropdown header
 const FontDropdownHeader = styled(DropdownHeader)<{ fontFamily: string }>`
-  font-family: ${({ fontFamily }) => fontFamily};
+  font-family: ${({ fontFamily }) => fontFamily} !important; /* FIX: Added !important */
 `;
 
 // New styled component for font size dropdown header
@@ -187,7 +187,7 @@ const MenuItem = styled.div<{ active: boolean }>`
 
 // New styled component for font preview items
 const FontMenuItem = styled(MenuItem)<{ fontFamily: string }>`
-  font-family: ${({ fontFamily }) => fontFamily};
+  font-family: ${({ fontFamily }) => fontFamily} !important; /* FIX: Added !important */
   font-size: 0.95rem;
 `;
 
@@ -610,7 +610,7 @@ const SignupPage: React.FC = () => {
                   className="fontfamily-dropdown" 
                   onClick={toggleFontFamilyDropdown}
                 >
-                                     <FontDropdownHeader 
+                   <FontDropdownHeader 
                      className={fontFamilyDropdownOpen ? 'open' : ''} 
                      fontFamily={fontFamily}
                    >
