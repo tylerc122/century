@@ -14,8 +14,6 @@ interface CropArea {
   scale: number;
 }
 
-// --- Styled Components (Unchanged) ---
-
 const ModalOverlay = styled.div<{ isOpen: boolean }>`
   position: fixed;
   top: 0;
@@ -211,22 +209,7 @@ const Button = styled.button<{ variant: 'primary' | 'secondary' }>`
   `}
 `;
 
-/**
- * A modal component for cropping and editing a profile picture.
- * * @param {string} imageSrc - The source URL of the **original, un-cropped** image.
- * @param {(croppedImage: string) => void} onSave - Callback that receives the cropped image as a base64 data URL.
- * @param {() => void} onCancel - Callback to close the modal.
- * @param {boolean} isOpen - Controls the modal's visibility.
- * * @important USAGE NOTE:
- * To allow users to re-edit their profile picture correctly, the parent component
- * must manage two separate image states:
- * 1. The original, full-resolution image uploaded by the user.
- * 2. The cropped image data URL returned by the `onSave` callback.
- * * Always pass the *original* image source to this component's `imageSrc` prop.
- * Use the cropped data URL for display purposes only (e.g., in an <img> avatar).
- * Failing to do this will cause the "whole picture is gone" issue on re-edit,
- * as the editor will receive an already-cropped image with no data to pan or zoom.
- */
+
 const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   imageSrc,
   onSave,
@@ -234,39 +217,59 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   isOpen
 }) => {
   const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, scale: 1 });
+  const [minScale, setMinScale] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ mouseX: 0, mouseY: 0, cropX: 0, cropY: 0 });
   
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Reset and calculate min scale when image changes or modal opens
+  useEffect(() => {
+    if (isOpen && imageSrc) {
+      const img = new Image();
+      img.onload = () => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
+        const { naturalWidth, naturalHeight } = img;
+        const CROP_OVERLAY_SIZE = 200;
+
+        // Calculate the 'cover' scale of the image
+        const coverScale = Math.max(containerWidth / naturalWidth, containerHeight / naturalHeight);
+
+        const coveredImgWidth = naturalWidth * coverScale;
+        const coveredImgHeight = naturalHeight * coverScale;
+        
+        // Calculate the minimum scale required to ensure the image
+        // can still cover the 200x200 crop area.
+        const newMinScale = Math.max(
+          CROP_OVERLAY_SIZE / coveredImgWidth,
+          CROP_OVERLAY_SIZE / coveredImgHeight
+        );
+        
+        setMinScale(newMinScale);
+        setCropArea({ x: 0, y: 0, scale: 1 }); // Reset to default
+      };
+      img.src = imageSrc;
+    }
+  }, [imageSrc, isOpen]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
-    setDragStart({
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      cropX: cropArea.x,
-      cropY: cropArea.y
-    });
+    setDragStart({ mouseX: e.clientX, mouseY: e.clientY, cropX: cropArea.x, cropY: cropArea.y });
   }, [cropArea.x, cropArea.y]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
-    
     e.preventDefault();
     const dx = e.clientX - dragStart.mouseX;
     const dy = e.clientY - dragStart.mouseY;
-
-    setCropArea(prev => ({
-      ...prev,
-      x: dragStart.cropX + dx / prev.scale,
-      y: dragStart.cropY + dy / prev.scale,
-    }));
+    setCropArea(prev => ({ ...prev, x: dragStart.cropX + dx / prev.scale, y: dragStart.cropY + dy / prev.scale }));
   }, [isDragging, dragStart]);
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+  const handleMouseUp = useCallback(() => { setIsDragging(false); }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -284,9 +287,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     setCropArea(prev => ({ ...prev, scale }));
   };
 
-  const handleReset = () => {
-    setCropArea({ x: 0, y: 0, scale: 1 });
-  };
+  const handleReset = () => { setCropArea({ x: 0, y: 0, scale: 1 }); };
 
   const handleSave = () => {
     const container = containerRef.current;
@@ -300,58 +301,33 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     img.crossOrigin = "Anonymous";
 
     img.onload = () => {
-      const FINAL_SIZE = 256; // Output resolution for the avatar
+      const FINAL_SIZE = 256;
       canvas.width = FINAL_SIZE;
       canvas.height = FINAL_SIZE;
 
       const { naturalWidth, naturalHeight } = img;
-      const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
-      const CROP_OVERLAY_SIZE = 200;
+      const { width: cW, height: cH } = container.getBoundingClientRect();
+      const CROP_SIZE = 200;
 
-      // 1. Determine the 'cover' scale of the image within the container
-      const coverScale = Math.max(containerWidth / naturalWidth, containerHeight / naturalHeight);
+      const coverScale = Math.max(cW / naturalWidth, cH / naturalHeight);
+      const initialOffsetX = (cW - naturalWidth * coverScale) / 2;
+      const initialOffsetY = (cH - naturalHeight * coverScale) / 2;
 
-      // 2. Find the center of the crop overlay relative to the container.
-      // This is the point we want to extract from the source image.
-      const cropCenterX_container = containerWidth / 2;
-      const cropCenterY_container = containerHeight / 2;
+      const source_container_center_x = cW / 2 - cropArea.x;
+      const source_container_center_y = cH / 2 - cropArea.y;
+
+      const sourceImage_centerX = (source_container_center_x - initialOffsetX) / coverScale;
+      const sourceImage_centerY = (source_container_center_y - initialOffsetY) / coverScale;
       
-      // 3. Reverse the user's transformations (scale and translate) to find
-      // where this center point would be on the untransformed container.
-      // The CSS is `scale(S) translate(X, Y)`. The effective translation is NOT scaled.
-      // We solve for `p` in `C = S * (p - C) + C + T` where C is the center origin.
-      // This simplifies to `p = C - T / S`.
-      const sourceCenterX_container = cropCenterX_container - (cropArea.x * cropArea.scale) / cropArea.scale;
-      const sourceCenterY_container = cropCenterY_container - (cropArea.y * cropArea.scale) / cropArea.scale;
-
-      // 4. Convert the container-space coordinates to original image-space coordinates.
-      // This involves removing the 'cover' scale and its centering offset.
-      const coveredImgWidth = naturalWidth * coverScale;
-      const coveredImgHeight = naturalHeight * coverScale;
-      const initialOffsetX = (containerWidth - coveredImgWidth) / 2;
-      const initialOffsetY = (containerHeight - coveredImgHeight) / 2;
-
-      const sourceImage_centerX = (sourceCenterX_container - initialOffsetX) / coverScale;
-      const sourceImage_centerY = (sourceCenterY_container - initialOffsetY) / coverScale;
-
-      // 5. Calculate the size of the crop area on the original image.
-      const sourceSize = CROP_OVERLAY_SIZE / (coverScale * cropArea.scale);
-
-      // 6. Calculate the top-left corner for `drawImage` from the center and size.
+      const sourceSize = CROP_SIZE / (coverScale * cropArea.scale);
       const sourceX = sourceImage_centerX - (sourceSize / 2);
       const sourceY = sourceImage_centerY - (sourceSize / 2);
-      
-      // 7. Draw the final circular image.
+
       ctx.beginPath();
       ctx.arc(FINAL_SIZE / 2, FINAL_SIZE / 2, FINAL_SIZE / 2, 0, Math.PI * 2, true);
       ctx.closePath();
       ctx.clip();
-      
-      ctx.drawImage(
-        img,
-        sourceX, sourceY, sourceSize, sourceSize,
-        0, 0, FINAL_SIZE, FINAL_SIZE
-      );
+      ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, FINAL_SIZE, FINAL_SIZE);
       
       const croppedImageDataUrl = canvas.toDataURL('image/png');
       onSave(croppedImageDataUrl);
@@ -359,11 +335,6 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     
     img.src = imageSrc;
   };
-  
-  // Reset when a new image is passed in
-  useEffect(() => {
-    handleReset();
-  }, [imageSrc]);
 
   if (!isOpen) return null;
 
@@ -374,20 +345,15 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
           <ModalTitle>Edit Profile Picture</ModalTitle>
           <CloseButton onClick={onCancel}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </CloseButton>
         </ModalHeader>
 
         <EditorContainer ref={containerRef}>
-          <ImageContainer
-            cropArea={cropArea}
-            onMouseDown={handleMouseDown}
-          >
+          <ImageContainer cropArea={cropArea} onMouseDown={handleMouseDown}>
             <EditableImage src={imageSrc} alt="Profile preview" draggable="false" />
           </ImageContainer>
-          
           <CropOverlay />
         </EditorContainer>
 
@@ -396,26 +362,20 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
             <ControlLabel>Zoom</ControlLabel>
             <Slider
               type="range"
-              min="1"
+              min={minScale}
               max="3"
               step="0.01"
               value={cropArea.scale}
               onChange={handleScaleChange}
             />
-            <SliderValue>{Math.round(cropArea.scale * 100)}%</SliderValue>
+            <SliderValue>{Math.round((cropArea.scale / minScale) * 100)}%</SliderValue>
           </ControlGroup>
         </ControlsContainer>
 
         <ButtonGroup>
-          <Button variant="secondary" onClick={handleReset}>
-            Reset
-          </Button>
-          <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save
-          </Button>
+          <Button variant="secondary" onClick={handleReset}>Reset</Button>
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" onClick={handleSave}>Save</Button>
         </ButtonGroup>
       </ModalContent>
     </ModalOverlay>
