@@ -14,6 +14,10 @@ const Container = styled.div`
   justify-content: center;
   background-color: ${({ theme }) => theme.background};
   padding: 2rem;
+  
+  /* Ensure proper overflow handling for dropdowns */
+  overflow: hidden;
+  position: relative;
 `;
 
 const SignupBox = styled.div`
@@ -23,6 +27,10 @@ const SignupBox = styled.div`
   border-radius: 10px;
   padding: 2rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
+  
+  /* Ensure dropdowns don't overflow the container */
+  overflow: visible;
+  position: relative;
 `;
 
 const Title = styled.h1`
@@ -102,6 +110,10 @@ const StyledDropdownContainer = styled.div`
   cursor: pointer;
   display: flex;
   align-items: center;
+  
+  /* Ensure container doesn't overflow viewport */
+  max-width: 100%;
+  overflow: visible;
 `;
 
 const DropdownHeader = styled.div`
@@ -138,9 +150,12 @@ const FontSizeDropdownHeader = styled(DropdownHeader)<{ fontSize: string }>`
   font-weight: 600;
 `;
 
-const DropdownMenu = styled.div`
+const DropdownMenu = styled.div<{ position: 'top' | 'bottom' }>`
   position: absolute;
-  top: calc(100% + 5px);
+  ${({ position }) => position === 'top' 
+    ? 'bottom: calc(100% + 5px);' 
+    : 'top: calc(100% + 5px);'
+  }
   left: 0;
   width: 100%;
   background-color: ${({ theme }) => theme.cardBackground};
@@ -150,6 +165,15 @@ const DropdownMenu = styled.div`
   border: 1px solid ${({ theme }) => theme.border};
   box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
   z-index: 100;
+  
+  /* Ensure dropdown doesn't go off-screen */
+  max-width: calc(100vw - 4rem);
+  
+  /* Prevent horizontal overflow */
+  overflow-x: hidden;
+  
+  /* Ensure text doesn't wrap awkwardly */
+  white-space: nowrap;
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -294,6 +318,11 @@ const SignupPage: React.FC = () => {
   const [fontSizeDropdownOpen, setFontSizeDropdownOpen] = useState(false);
   const [fontFamilyDropdownOpen, setFontFamilyDropdownOpen] = useState(false);
   
+  // Dropdown positions
+  const [themeDropdownPosition, setThemeDropdownPosition] = useState<'top' | 'bottom'>('bottom');
+  const [fontSizeDropdownPosition, setFontSizeDropdownPosition] = useState<'top' | 'bottom'>('bottom');
+  const [fontFamilyDropdownPosition, setFontFamilyDropdownPosition] = useState<'top' | 'bottom'>('bottom');
+  
   // Get theme context for real-time preview
   const themeContext = useContext(ThemeContext);
   
@@ -366,6 +395,7 @@ const SignupPage: React.FC = () => {
     };
     
     document.addEventListener('mousedown', handleClickOutside);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -378,10 +408,51 @@ const SignupPage: React.FC = () => {
     }
   }, [themeName, themeContext]);
   
-  // Handle dropdown toggles
-  const toggleThemeDropdown = () => setThemeDropdownOpen(!themeDropdownOpen);
-  const toggleFontSizeDropdown = () => setFontSizeDropdownOpen(!fontSizeDropdownOpen);
-  const toggleFontFamilyDropdown = () => setFontFamilyDropdownOpen(!fontFamilyDropdownOpen);
+  // Calculate optimal dropdown position
+  const calculateDropdownPosition = (dropdownId: string): 'top' | 'bottom' => {
+    const container = document.querySelector(`.${dropdownId}`);
+    if (!container) return 'bottom';
+    
+    const rect = container.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 300; // max-height from CSS
+    
+    // Check if there's enough space below
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // If there's more space above or not enough space below, position above
+    if (spaceBelow < dropdownHeight + 20 || spaceAbove > spaceBelow) {
+      return 'top';
+    }
+    
+    return 'bottom';
+  };
+  
+  // Handle dropdown toggles with position calculation
+  const toggleThemeDropdown = () => {
+    if (!themeDropdownOpen) {
+      const position = calculateDropdownPosition('theme-dropdown');
+      setThemeDropdownPosition(position);
+    }
+    setThemeDropdownOpen(!themeDropdownOpen);
+  };
+  
+  const toggleFontSizeDropdown = () => {
+    if (!fontSizeDropdownOpen) {
+      const position = calculateDropdownPosition('fontsize-dropdown');
+      setFontSizeDropdownPosition(position);
+    }
+    setFontSizeDropdownOpen(!fontSizeDropdownOpen);
+  };
+  
+  const toggleFontFamilyDropdown = () => {
+    if (!fontFamilyDropdownOpen) {
+      const position = calculateDropdownPosition('fontfamily-dropdown');
+      setFontFamilyDropdownPosition(position);
+    }
+    setFontFamilyDropdownOpen(!fontFamilyDropdownOpen);
+  };
   
   // Handle dropdown selection
   const handleThemeSelect = (theme: string) => {
@@ -538,7 +609,7 @@ const SignupPage: React.FC = () => {
                   </HiddenSelect>
                   
                   {themeDropdownOpen && (
-                    <DropdownMenu>
+                    <DropdownMenu position={themeDropdownPosition}>
                       {AVAILABLE_THEMES.map(theme => (
                         <MenuItem 
                           key={theme.value}
@@ -585,7 +656,7 @@ const SignupPage: React.FC = () => {
                   </HiddenSelect>
                   
                   {fontSizeDropdownOpen && (
-                    <DropdownMenu>
+                    <DropdownMenu position={fontSizeDropdownPosition}>
                       {FONT_SIZES.map(size => (
                         <FontSizeMenuItem 
                           key={size.id}
@@ -633,7 +704,7 @@ const SignupPage: React.FC = () => {
                   </HiddenSelect>
                   
                   {fontFamilyDropdownOpen && (
-                    <DropdownMenu>
+                    <DropdownMenu position={fontFamilyDropdownPosition}>
                       {FONT_FAMILIES.map(font => (
                         <FontMenuItem 
                           key={font.label}
