@@ -50,11 +50,13 @@ const LeftColumn = styled.div`
   gap: 1rem;
   height: 100%;
   overflow-y: hidden;
+  justify-content: space-between;
 
   @media (max-width: 900px) {
     gap: 0.75rem;
     height: auto;
     overflow: visible;
+    justify-content: flex-start;
   }
 `;
 
@@ -230,6 +232,7 @@ const StatsContainer = styled.div`
   border-radius: 8px;
   padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
+  flex: 1;
 `;
 
 const StatsTitle = styled.h3`
@@ -243,6 +246,10 @@ const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
+  
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 
 const StatItem = styled.div`
@@ -358,118 +365,82 @@ const WeekdayLabel = styled.div`
   width: 100%;
 `;
 
-const WordStatsContainer = styled.div`
+const RandomMemoryContainer = styled.div`
   width: 100%;
   background-color: ${({ theme }) => theme.cardBackground};
   border-radius: 8px;
-  padding: 1rem;
-  box-shadow: ${({ theme }) => theme.cardShadow};
-`;
-
-const WordStatsTitle = styled.h3`
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: ${({ theme }) => theme.foreground};
-`;
-
-const WordStatsContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const WordStatsItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background-color: ${({ theme }) => theme.light};
-`;
-
-const WordStatsLabel = styled.span`
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.secondary};
-`;
-
-const WordStatsValue = styled.span`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.primary};
-`;
-
-const FavoriteEntriesContainer = styled.div`
-  width: 100%;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: ${({ theme }) => theme.cardBackground};
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: ${({ theme }) => theme.cardShadow};
-
-  @media (max-width: 900px) {
-    padding: 0.75rem;
-    flex: none;
-    min-height: 200px;
-    overflow: visible;
-  }
-`;
-
-const FavoriteEntriesTitle = styled.h3`
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: ${({ theme }) => theme.foreground};
-`;
-
-const FavoriteEntriesList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-  overflow-y: auto;
-
-  @media (max-width: 900px) {
-    gap: 0.4rem;
-    max-height: none;
-    overflow: visible;
-  }
-`;
-
-const FavoriteEntryCard = styled.div`
   padding: 0.75rem;
-  border-radius: 4px;
+  box-shadow: ${({ theme }) => theme.cardShadow};
+  flex: 1;
+`;
+
+const RandomMemoryTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: ${({ theme }) => theme.foreground};
+`;
+
+const RandomMemoryContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+`;
+
+const RandomMemoryEntry = styled.div`
   background-color: ${({ theme }) => theme.light};
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 100%;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
   
   &:hover {
+    background-color: ${({ theme }) => theme.border};
     transform: translateY(-2px);
   }
 `;
 
-const FavoriteEntryTitle = styled.div`
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: ${({ theme }) => theme.foreground};
+const RandomMemoryDate = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.secondary};
   margin-bottom: 0.25rem;
 `;
 
-const FavoriteEntryDate = styled.div`
-  font-size: 0.8rem;
-  color: ${({ theme }) => theme.secondary};
+const RandomMemoryEntryTitle = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.foreground};
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
 `;
 
-const EmptyFavorites = styled.div`
-  text-align: center;
-  padding: 1rem;
+const RandomMemoryPreview = styled.div`
+  font-size: 0.8rem;
   color: ${({ theme }) => theme.secondary};
-  font-size: 0.9rem;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+`;
+
+const RefreshButton = styled.button`
+  background-color: ${({ theme }) => theme.primary};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.dark};
+    transform: scale(1.05);
+  }
 `;
 
 // Dropdown components
@@ -744,6 +715,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [tempImageForEditing, setTempImageForEditing] = useState<string | null>(null);
+  const [randomMemory, setRandomMemory] = useState<DiaryEntry | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarGridRef = useRef<HTMLDivElement | null>(null);
   const usernameInputRef = useRef<HTMLInputElement | null>(null);
@@ -756,6 +728,14 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
       setProfilePicture(profileData.profilePicture);
     } catch (error) {
       console.error('Failed to refresh profile data:', error);
+    }
+  };
+
+  // Function to get a new random memory
+  const getNewRandomMemory = () => {
+    if (stats.favoriteEntries && stats.favoriteEntries.length > 0) {
+      const randomIndex = Math.floor(Math.random() * stats.favoriteEntries.length);
+      setRandomMemory(stats.favoriteEntries[randomIndex]);
     }
   };
 
@@ -1197,44 +1177,57 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
                 <StatValue>{stats.totalMediaUploaded}</StatValue>
                 <StatLabel>Media Uploaded</StatLabel>
               </StatItem>
+              <StatItem style={{ gridColumn: 'span 3' }}>
+                <StatValue>{stats.mostFrequentWord}</StatValue>
+                <StatLabel>Most Frequent Word</StatLabel>
+              </StatItem>
             </StatsGrid>
           </StatsContainer>
           
-          <WordStatsContainer>
-            <WordStatsTitle>Word Statistics</WordStatsTitle>
-            <WordStatsContent>
-              <WordStatsItem>
-                <WordStatsLabel>Most Frequent Word</WordStatsLabel>
-                <WordStatsValue>{stats.mostFrequentWord}</WordStatsValue>
-              </WordStatsItem>
-              <WordStatsItem>
-                <WordStatsLabel>Average Words Per Entry</WordStatsLabel>
-                <WordStatsValue>
-                  {stats.totalEntries > 0 
-                    ? Math.round(stats.totalWords / stats.totalEntries) 
-                    : 0}
-                </WordStatsValue>
-              </WordStatsItem>
-            </WordStatsContent>
-          </WordStatsContainer>
-          
-          <FavoriteEntriesContainer>
-            <FavoriteEntriesTitle>Favorite Entries</FavoriteEntriesTitle>
-            {stats.favoriteEntries.length > 0 ? (
-              <FavoriteEntriesList>
-                {stats.favoriteEntries.map(entry => (
-                  <FavoriteEntryCard key={entry.id} onClick={() => onSelectEntry(entry)}>
-                    <FavoriteEntryTitle>{entry.title}</FavoriteEntryTitle>
-                    <FavoriteEntryDate>{entry.date.toLocaleDateString()}</FavoriteEntryDate>
-                  </FavoriteEntryCard>
-                ))}
-              </FavoriteEntriesList>
-            ) : (
-              <EmptyFavorites>
-                You haven't marked any entries as favorites yet.
-              </EmptyFavorites>
-            )}
-          </FavoriteEntriesContainer>
+          <RandomMemoryContainer>
+            <RandomMemoryTitle>Random Memory</RandomMemoryTitle>
+            <RandomMemoryContent>
+              {randomMemory ? (
+                <RandomMemoryEntry onClick={() => onSelectEntry(randomMemory)}>
+                  <RandomMemoryDate>
+                    {new Date(randomMemory.date).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </RandomMemoryDate>
+                  <RandomMemoryEntryTitle>{randomMemory.title}</RandomMemoryEntryTitle>
+                  <RandomMemoryPreview>
+                    {randomMemory.content.length > 100 
+                      ? randomMemory.content.substring(0, 100) + '...'
+                      : randomMemory.content
+                    }
+                  </RandomMemoryPreview>
+                </RandomMemoryEntry>
+              ) : stats.favoriteEntries && stats.favoriteEntries.length > 0 ? (
+                <RandomMemoryEntry onClick={getNewRandomMemory}>
+                  <RandomMemoryDate>Click to see a memory</RandomMemoryDate>
+                  <RandomMemoryEntryTitle>Discover a random memory</RandomMemoryEntryTitle>
+                  <RandomMemoryPreview>
+                    Tap to see a memory from your past entries...
+                  </RandomMemoryPreview>
+                </RandomMemoryEntry>
+              ) : (
+                <RandomMemoryEntry>
+                  <RandomMemoryDate>No entries yet</RandomMemoryDate>
+                  <RandomMemoryEntryTitle>Start writing to see memories here</RandomMemoryEntryTitle>
+                  <RandomMemoryPreview>
+                    Your random memories will appear here once you have some entries.
+                  </RandomMemoryPreview>
+                </RandomMemoryEntry>
+              )}
+              {stats.favoriteEntries && stats.favoriteEntries.length > 0 && (
+                <RefreshButton onClick={getNewRandomMemory}>
+                  🔄 New Memory
+                </RefreshButton>
+              )}
+            </RandomMemoryContent>
+          </RandomMemoryContainer>
         </LeftColumn>
 
         <RightColumn>
