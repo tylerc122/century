@@ -372,6 +372,7 @@ const RandomMemoryContainer = styled.div`
   padding: 0.75rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
   flex: 1;
+  position: relative;
 `;
 
 const RandomMemoryTitle = styled.h3`
@@ -428,18 +429,26 @@ const RandomMemoryPreview = styled.div`
 `;
 
 const RefreshButton = styled.button`
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
   background-color: ${({ theme }) => theme.primary};
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
     background-color: ${({ theme }) => theme.dark};
     transform: scale(1.05);
+  }
+  
+  svg {
+    width: 12px;
+    height: 12px;
   }
 `;
 
@@ -716,6 +725,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [tempImageForEditing, setTempImageForEditing] = useState<string | null>(null);
   const [randomMemory, setRandomMemory] = useState<DiaryEntry | null>(null);
+  const [allEntries, setAllEntries] = useState<DiaryEntry[]>([]);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarGridRef = useRef<HTMLDivElement | null>(null);
   const usernameInputRef = useRef<HTMLInputElement | null>(null);
@@ -733,9 +743,22 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
 
   // Function to get a new random memory
   const getNewRandomMemory = () => {
-    if (stats.favoriteEntries && stats.favoriteEntries.length > 0) {
-      const randomIndex = Math.floor(Math.random() * stats.favoriteEntries.length);
-      setRandomMemory(stats.favoriteEntries[randomIndex]);
+    if (allEntries && allEntries.length > 0) {
+      let newRandomIndex;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      // Try to pick a different entry than the current one
+      do {
+        newRandomIndex = Math.floor(Math.random() * allEntries.length);
+        attempts++;
+      } while (
+        attempts < maxAttempts && 
+        randomMemory && 
+        allEntries[newRandomIndex]?.id === randomMemory.id
+      );
+      
+      setRandomMemory(allEntries[newRandomIndex]);
     }
   };
 
@@ -763,6 +786,14 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
         const profileData = await diaryService.getUserProfile();
         setUsername(profileData.username);
         setProfilePicture(profileData.profilePicture);
+        
+        // Load all entries for random memory feature
+        try {
+          const entries = await diaryService.getAllEntries();
+          setAllEntries(entries);
+        } catch (error) {
+          console.error('Failed to load entries for random memory:', error);
+        }
         
         // Get user creation date from auth (with caching)
         const cachedAuthData = storageService.getCachedAuthData();
@@ -1185,6 +1216,16 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
           </StatsContainer>
           
           <RandomMemoryContainer>
+            {randomMemory && (
+              <RefreshButton onClick={getNewRandomMemory}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                  <path d="M3 21v-5h5"></path>
+                </svg>
+              </RefreshButton>
+            )}
             <RandomMemoryTitle>Random Memory</RandomMemoryTitle>
             <RandomMemoryContent>
               {randomMemory ? (
@@ -1204,7 +1245,7 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
                     }
                   </RandomMemoryPreview>
                 </RandomMemoryEntry>
-              ) : stats.favoriteEntries && stats.favoriteEntries.length > 0 ? (
+              ) : allEntries && allEntries.length > 0 ? (
                 <RandomMemoryEntry onClick={getNewRandomMemory}>
                   <RandomMemoryDate>Click to see a memory</RandomMemoryDate>
                   <RandomMemoryEntryTitle>Discover a random memory</RandomMemoryEntryTitle>
@@ -1220,11 +1261,6 @@ const Profile: React.FC<ProfileProps> = ({ onSelectEntry }) => {
                     Your random memories will appear here once you have some entries.
                   </RandomMemoryPreview>
                 </RandomMemoryEntry>
-              )}
-              {stats.favoriteEntries && stats.favoriteEntries.length > 0 && (
-                <RefreshButton onClick={getNewRandomMemory}>
-                  🔄 New Memory
-                </RefreshButton>
               )}
             </RandomMemoryContent>
           </RandomMemoryContainer>
