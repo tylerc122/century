@@ -15,6 +15,16 @@ const Container = styled.div`
   padding: 1.5rem;
   background-color: ${({ theme }) => theme.background};
   overflow: hidden;
+
+  @media (max-width: 900px) {
+    padding: 1rem;
+    overflow: auto;
+  }
+
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+    overflow: auto;
+  }
 `;
 
 const DesktopLayout = styled.div`
@@ -28,6 +38,9 @@ const DesktopLayout = styled.div`
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    height: auto;
+    min-height: 100%;
   }
 `;
 
@@ -37,6 +50,12 @@ const LeftColumn = styled.div`
   gap: 1rem;
   height: 100%;
   overflow-y: hidden;
+
+  @media (max-width: 900px) {
+    gap: 0.75rem;
+    height: auto;
+    overflow: visible;
+  }
 `;
 
 const RightColumn = styled.div`
@@ -44,6 +63,12 @@ const RightColumn = styled.div`
   flex-direction: column;
   height: 100%;
   overflow-y: hidden;
+
+  @media (max-width: 900px) {
+    gap: 0.75rem;
+    height: auto;
+    overflow: visible;
+  }
 `;
 
 const ProfileHeader = styled.div`
@@ -259,6 +284,12 @@ const StreakContainer = styled.div`
   box-shadow: ${({ theme }) => theme.cardShadow};
   overflow: visible;
   flex: 1;
+
+  @media (max-width: 900px) {
+    padding: 0.75rem;
+    flex: none;
+    overflow: visible;
+  }
 `;
 
 const CalendarContainer = styled.div`
@@ -268,6 +299,11 @@ const CalendarContainer = styled.div`
   overflow: visible;
   flex: 1;
   position: relative;
+
+  @media (max-width: 900px) {
+    flex: none;
+    overflow: visible;
+  }
 `;
 
 const CalendarHeader = styled.div`
@@ -371,6 +407,13 @@ const FavoriteEntriesContainer = styled.div`
   border-radius: 8px;
   padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
+
+  @media (max-width: 900px) {
+    padding: 0.75rem;
+    flex: none;
+    min-height: 200px;
+    overflow: visible;
+  }
 `;
 
 const FavoriteEntriesTitle = styled.h3`
@@ -386,6 +429,12 @@ const FavoriteEntriesList = styled.div`
   gap: 0.5rem;
   flex: 1;
   overflow-y: auto;
+
+  @media (max-width: 900px) {
+    gap: 0.4rem;
+    max-height: none;
+    overflow: visible;
+  }
 `;
 
 const FavoriteEntryCard = styled.div`
@@ -536,6 +585,20 @@ const CalendarGrid = styled.div`
   align-items: center;
   overflow-y: auto;
   max-height: 500px;
+
+  @media (max-width: 900px) {
+    gap: 8px;
+    padding: 0.4rem;
+    max-height: none;
+    overflow: visible;
+  }
+
+  @media (max-width: 600px) {
+    gap: 6px;
+    padding: 0.3rem;
+    max-height: none;
+    overflow: visible;
+  }
 `;
 
 const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: boolean; isRetroactive?: boolean }>`
