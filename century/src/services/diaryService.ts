@@ -206,6 +206,9 @@ class DiaryStorage {
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
       
+      // Force fresh fetch on next getAllEntries call by clearing internal cache
+      this.cachedEntries = null;
+      
       return newEntry;
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -256,6 +259,9 @@ class DiaryStorage {
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
       
+      // Force fresh fetch on next getAllEntries call by clearing internal cache
+      this.cachedEntries = null;
+      
       return updatedEntry;
     } catch (error) {
       console.error('Error updating entry:', error);
@@ -287,6 +293,9 @@ class DiaryStorage {
       
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
+      
+      // Force fresh fetch on next getAllEntries call by clearing internal cache
+      this.cachedEntries = null;
     } catch (error) {
       console.error('Error deleting entry:', error);
       throw error;
@@ -509,7 +518,7 @@ export const diaryService = {
   },
   
   deleteEntry: async (entryId: string): Promise<void> => {
-    storage.deleteEntry(entryId);
+    await storage.deleteEntry(entryId);
   },
   
   getUserStats: async (): Promise<UserStats> => {

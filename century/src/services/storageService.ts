@@ -185,6 +185,8 @@ class LocalStorageService {
         // Sort by date (newest first) and cache
         const sorted = merged.sort((a, b) => b.date.getTime() - a.date.getTime());
         this.cacheEntries(sorted);
+        // Clear last sync timestamp to force fresh fetch on next getAllEntries call
+        localStorage.removeItem(this.KEYS.LAST_SYNC);
       }
     } catch (error) {
       console.warn('Failed to update entries cache:', error);
@@ -198,6 +200,8 @@ class LocalStorageService {
       if (cached) {
         const filtered = cached.filter(entry => entry.id !== entryId);
         this.cacheEntries(filtered);
+        // Clear last sync timestamp to force fresh fetch on next getAllEntries call
+        localStorage.removeItem(this.KEYS.LAST_SYNC);
       }
     } catch (error) {
       console.warn('Failed to remove entry from cache:', error);

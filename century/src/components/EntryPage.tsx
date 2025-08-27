@@ -8,6 +8,7 @@ interface EntryPageProps {
   entry?: DiaryEntry;
   onSave: () => void;
   onCancel: () => void;
+  onRefresh?: () => void;
 }
 
 // Styled components
@@ -346,7 +347,7 @@ const ImageActionButton = styled.button`
   }
 `;
 
-const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
+const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefresh }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [date, setDate] = useState('');
@@ -452,6 +453,11 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel }) => {
         await diaryService.updateEntry(entryData as DiaryEntry);
       } else {
         await diaryService.addEntry(entryData);
+      }
+
+      // Call onRefresh callback to refresh the entries list
+      if (onRefresh) {
+        onRefresh();
       }
 
       onSave();

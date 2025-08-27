@@ -437,12 +437,14 @@ interface DiaryEntryListProps {
   setSelectedEntry: (entry: DiaryEntry | undefined) => void;
   onEditEntry?: (entry: DiaryEntry) => void;
   onViewEntry?: (entry: DiaryEntry) => void;
+  refreshTrigger?: number;
 }
 
 const DiaryEntryList: React.FC<DiaryEntryListProps> = ({ 
   setSelectedEntry,
   onEditEntry,
-  onViewEntry
+  onViewEntry,
+  refreshTrigger
 }) => {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
@@ -514,7 +516,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
 
   useEffect(() => {
     loadEntries();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleDropdownClick = () => {
     setDropdownOpen(!dropdownOpen);

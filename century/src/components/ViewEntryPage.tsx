@@ -9,6 +9,7 @@ interface ViewEntryPageProps {
   entry: DiaryEntry;
   onClose: () => void;
   onEdit: (entry: DiaryEntry) => void;
+  onDelete?: () => void;
 }
 
 // Styled components
@@ -167,7 +168,7 @@ const formatDate = (date: Date): string => {
   return formatDateUtil(date, 'long');
 };
 
-const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit }) => {
+const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit, onDelete }) => {
   const isEditable = isEntryFromToday(entry);
   const [showNonEditableMessage, setShowNonEditableMessage] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -185,6 +186,10 @@ const ViewEntryPage: React.FC<ViewEntryPageProps> = ({ entry, onClose, onEdit })
   const handleDelete = async () => {
     try {
       await diaryService.deleteEntry(entry.id);
+      // Call onDelete callback to refresh the entries list
+      if (onDelete) {
+        onDelete();
+      }
       onClose(); // Close the view and return to the list
     } catch (error) {
       console.error('Failed to delete diary entry:', error);

@@ -125,6 +125,7 @@ const NavButton = styled.button<{ active: boolean }>`
 function MainApp() {
   const [activeView, setActiveView] = useState<'entries' | 'profile' | 'entry' | 'viewEntry' | 'settings'>('entries');
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | undefined>(undefined);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -141,6 +142,10 @@ function MainApp() {
     } catch (error) {
       console.error('Logout failed:', error);
     }
+  };
+
+  const refreshEntries = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -168,6 +173,7 @@ function MainApp() {
               setSelectedEntry(entry);
               setActiveView('viewEntry');
             }}
+            refreshTrigger={refreshTrigger}
           />
         )}
         {activeView === 'profile' && <Profile onSelectEntry={handleSelectEntry} />}
@@ -183,6 +189,7 @@ function MainApp() {
               setSelectedEntry(entry);
               setActiveView('entry');
             }}
+            onDelete={refreshEntries}
           />
         )}
         {activeView === 'entry' && (
@@ -196,6 +203,7 @@ function MainApp() {
               setActiveView('entries');
               setSelectedEntry(undefined);
             }}
+            onRefresh={refreshEntries}
           />
         )}
       </Content>
