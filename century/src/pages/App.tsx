@@ -29,13 +29,28 @@ const Header = styled.header`
   border-bottom: 1px solid rgba(215, 204, 200, 0.5);
 `;
 
-const Title = styled.h1`
+const Title = styled.button`
   font-size: 24px;
   font-weight: 500;
   color: ${({ theme }) => theme.foreground};
   letter-spacing: 0.03em;
   opacity: 0.85;
   font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  margin: -8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    opacity: 1;
+    color: ${({ theme }) => theme.primary};
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
 `;
 
 const NewEntryButton = styled.button`
@@ -110,7 +125,13 @@ function App() {
   return (
     <AppContainer>
       <Header>
-        <Title>century</Title>
+        <Title 
+          onClick={() => setActiveView('entries')}
+          type="button"
+          aria-label="Go to home page"
+        >
+          century
+        </Title>
         <NewEntryButton onClick={() => {
           setSelectedEntry(undefined);
           setActiveView('entry');
