@@ -31,6 +31,13 @@ const PageHeader = styled.div`
   top: 0;
   background-color: ${({ theme }) => theme.headerBackground || theme.background};
   z-index: 10;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -38,12 +45,22 @@ const PageTitle = styled.h1`
   font-weight: 600;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+    width: 100%;
+  }
 `;
 
 const EditorContainer = styled.div`
   display: flex;
   flex: 1;
   height: calc(100vh - 140px);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: auto;
+  }
 `;
 
 const EditorContent = styled.div`
@@ -52,6 +69,11 @@ const EditorContent = styled.div`
   margin: 0 auto;
   padding: 2rem;
   width: 100%;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    max-width: 100%;
+  }
 `;
 
 const EditorSidebar = styled.div`
@@ -59,11 +81,23 @@ const EditorSidebar = styled.div`
   border-left: 1px solid ${({ theme }) => theme.border};
   padding: 1.5rem;
   background-color: ${({ theme }) => theme.background};
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid ${({ theme }) => theme.border};
+    padding: 1rem;
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
   gap: 1rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: flex-end;
+  }
 `;
 
 const Button = styled.button`
@@ -74,6 +108,11 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
 `;
 
 const CancelButton = styled(Button)`
@@ -134,6 +173,13 @@ const WarningBanner = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 const WarningText = styled.span`
@@ -148,6 +194,11 @@ const CloseWarningButton = styled.button`
   color: #721c24;
   padding: 0 0 0 1rem;
   line-height: 1;
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0 0 0;
+    align-self: flex-end;
+  }
 `;
 
 const TitleInput = styled(Input)<{ disabled?: boolean }>`
@@ -162,6 +213,12 @@ const TitleInput = styled(Input)<{ disabled?: boolean }>`
   &:focus {
     border-color: ${({ theme }) => theme.primary};
     box-shadow: none;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+    padding: 0.75rem 0;
+    margin-bottom: 1rem;
   }
 `;
 
@@ -179,10 +236,20 @@ const TextArea = styled.textarea<{ disabled?: boolean }>`
   &:focus {
     outline: none;
   }
+  
+  @media (max-width: 768px) {
+    min-height: 200px;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+  }
 `;
 
 const SidebarSection = styled.div`
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const SidebarTitle = styled.h3`
@@ -198,6 +265,10 @@ const ToggleGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  
+  @media (max-width: 480px) {
+    gap: 1rem;
+  }
 `;
 
 const ToggleLabel = styled.label`
@@ -260,6 +331,10 @@ const ImagePreviewContainer = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   margin-top: 1rem;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const ImagePreview = styled.div<{ isCover?: boolean }>`
