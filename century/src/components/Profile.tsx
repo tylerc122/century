@@ -9,38 +9,38 @@ import storageService from '../services/storageService';
 // Styled components
 const Container = styled.div`
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
   background-color: ${({ theme }) => theme.background};
-  overflow: hidden;
+  overflow: auto;
 
   @media (max-width: 900px) {
     padding: 1rem;
-    overflow: auto;
   }
 
   @media (max-width: 600px) {
     padding: 0.75rem;
-    overflow: auto;
   }
 `;
 
 const DesktopLayout = styled.div`
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(260px, 300px) 1fr;
   gap: 1.5rem;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   max-width: 1400px;
   margin: 0 auto;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
     gap: 1rem;
-    height: auto;
-    min-height: 100%;
+  }
+
+  @media (max-width: 600px) {
+    gap: 0.75rem;
   }
 `;
 
@@ -48,28 +48,31 @@ const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  height: 100%;
-  overflow-y: hidden;
-  justify-content: space-between;
+  min-height: 100%;
+  overflow-y: auto;
+  justify-content: flex-start;
 
   @media (max-width: 900px) {
     gap: 0.75rem;
-    height: auto;
-    overflow: visible;
-    justify-content: flex-start;
+  }
+  
+  @media (max-width: 600px) {
+    gap: 0.5rem;
   }
 `;
 
 const RightColumn = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow-y: hidden;
+  min-height: 100%;
+  overflow-y: auto;
 
   @media (max-width: 900px) {
     gap: 0.75rem;
-    height: auto;
-    overflow: visible;
+  }
+  
+  @media (max-width: 600px) {
+    gap: 0.5rem;
   }
 `;
 
@@ -175,7 +178,7 @@ const UsernameContainer = styled.div`
 `;
 
 const Username = styled.h2`
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 600;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
@@ -185,7 +188,7 @@ const Username = styled.h2`
 
 
 const UsernameInput = styled.input`
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 600;
   color: ${({ theme }) => theme.foreground};
   background-color: transparent;
@@ -222,7 +225,7 @@ const EditButton = styled.button`
 `;
 
 const JoinedDate = styled.p`
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   color: ${({ theme }) => theme.secondary};
 `;
 
@@ -233,10 +236,15 @@ const StatsContainer = styled.div`
   padding: 1rem;
   box-shadow: ${({ theme }) => theme.cardShadow};
   flex: 1;
+  overflow: auto;
+  
+  @media (max-width: 600px) {
+    padding: 0.75rem;
+  }
 `;
 
 const StatsTitle = styled.h3`
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 3vw, 1rem);
   font-weight: 600;
   margin-bottom: 0.75rem;
   color: ${({ theme }) => theme.foreground};
@@ -249,6 +257,7 @@ const StatsGrid = styled.div`
   
   @media (max-width: 600px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 `;
 
@@ -257,14 +266,20 @@ const StatItem = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 0.75rem;
   background-color: ${({ theme }) => theme.light};
   border-radius: 8px;
   text-align: center;
+  min-height: 80px;
+  
+  @media (max-width: 600px) {
+    padding: 0.5rem;
+    min-height: 70px;
+  }
 `;
 
 const StatValue = styled.span`
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
   font-weight: 600;
   color: ${({ theme }) => theme.primary};
   display: block;
@@ -273,7 +288,7 @@ const StatValue = styled.span`
 `;
 
 const StatLabel = styled.span`
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 3vw, 0.85rem);
   color: ${({ theme }) => theme.secondary};
   margin-top: 0.5rem;
   display: block;
@@ -295,7 +310,10 @@ const StreakContainer = styled.div`
   @media (max-width: 900px) {
     padding: 0.75rem;
     flex: none;
-    overflow: visible;
+  }
+  
+  @media (max-width: 600px) {
+    padding: 0.5rem;
   }
 `;
 
@@ -329,7 +347,7 @@ const CalendarControls = styled.div`
 const CalendarMonthYear = styled.div`
   font-weight: 600;
   color: ${({ theme }) => theme.foreground};
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
 `;
 
 const CalendarNavButton = styled.button`
@@ -358,11 +376,15 @@ const WeekdayLabels = styled.div`
 
 const WeekdayLabel = styled.div`
   text-align: center;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
   color: ${({ theme }) => theme.secondary};
   font-weight: 600;
   padding: 0.3rem 0;
   width: 100%;
+  
+  @media (max-width: 600px) {
+    padding: 0.2rem 0;
+  }
 `;
 
 const RandomMemoryContainer = styled.div`
@@ -373,10 +395,18 @@ const RandomMemoryContainer = styled.div`
   box-shadow: ${({ theme }) => theme.cardShadow};
   flex: 1;
   position: relative;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 600px) {
+    min-height: 160px;
+    padding: 0.5rem;
+  }
 `;
 
 const RandomMemoryTitle = styled.h3`
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 3vw, 1rem);
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: ${({ theme }) => theme.foreground};
@@ -388,6 +418,8 @@ const RandomMemoryContent = styled.div`
   gap: 0.5rem;
   align-items: center;
   text-align: center;
+  flex: 1;
+  justify-content: center;
 `;
 
 const RandomMemoryEntry = styled.div`
@@ -397,6 +429,13 @@ const RandomMemoryEntry = styled.div`
   width: 100%;
   cursor: pointer;
   transition: all 0.2s ease;
+  max-height: 140px;
+  overflow-y: auto;
+  
+  @media (max-width: 600px) {
+    padding: 0.5rem;
+    max-height: 120px;
+  }
   
   &:hover {
     background-color: ${({ theme }) => theme.border};
@@ -405,13 +444,13 @@ const RandomMemoryEntry = styled.div`
 `;
 
 const RandomMemoryDate = styled.div`
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   color: ${({ theme }) => theme.secondary};
   margin-bottom: 0.25rem;
 `;
 
 const RandomMemoryEntryTitle = styled.div`
-  font-size: 0.9rem;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
   font-weight: 600;
   color: ${({ theme }) => theme.foreground};
   margin-bottom: 0.25rem;
@@ -419,7 +458,7 @@ const RandomMemoryEntryTitle = styled.div`
 `;
 
 const RandomMemoryPreview = styled.div`
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
   color: ${({ theme }) => theme.secondary};
   line-height: 1.4;
   display: -webkit-box;
@@ -535,7 +574,7 @@ const HiddenSelect = styled.select`
 `;
 
 const StreakTitle = styled.h3`
-  font-size: 1rem;
+  font-size: clamp(0.9rem, 3vw, 1rem);
   font-weight: 600;
   margin-bottom: 0.5rem;
   display: flex;
@@ -545,7 +584,7 @@ const StreakTitle = styled.h3`
 
 
 const StreakValue = styled.div`
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   font-weight: 700;
   color: ${({ theme }) => theme.foreground};
   text-align: center;
@@ -555,7 +594,7 @@ const StreakValue = styled.div`
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: clamp(6px, 1.5vw, 12px);
   width: 100%;
   margin: 0 auto;
   padding: 0.5rem;
@@ -567,17 +606,14 @@ const CalendarGrid = styled.div`
   max-height: 500px;
 
   @media (max-width: 900px) {
-    gap: 8px;
     padding: 0.4rem;
     max-height: none;
     overflow: visible;
   }
 
   @media (max-width: 600px) {
-    gap: 6px;
     padding: 0.3rem;
-    max-height: none;
-    overflow: visible;
+    gap: 4px;
   }
 `;
 
@@ -599,7 +635,7 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: clamp(14px, 3vw, 18px);
   font-weight: ${props => props.isToday ? '700' : '400'};
   color: ${props => {
     if (props.isEmpty) return 'transparent';
@@ -626,10 +662,14 @@ const CalendarDay = styled.div<{ active: boolean; isEmpty?: boolean; isToday?: b
       position: absolute;
       top: 2px;
       right: 2px;
-      font-size: 8px;
+      font-size: clamp(6px, 2vw, 8px);
       color: ${props.theme.light};
     }
   `}
+
+  @media (max-width: 600px) {
+    font-size: 14px;
+  }
 `;
 
 const LoadingMessage = styled.div`
