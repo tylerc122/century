@@ -5,6 +5,8 @@ import diaryService from '../services/diaryService';
 import MemoryView from '../components/MemoryView';
 import PasswordModal from './PasswordModal';
 import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
+import { decryptText, isEncrypted } from '../utils/encryptionUtils';
+import passwordService from '../services/passwordService';
 
 // Styled components
 const Container = styled.div`
@@ -455,6 +457,17 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
+  const [entryActionType, setEntryActionType] = useState<'view' | 'edit'>('view');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  
+  // Get user email for decryption
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const email = await passwordService.getCurrentUserEmail();
+      setUserEmail(email);
+    };
+    fetchUserEmail();
+  }, []);
 
   const loadEntries = async () => {
     try {
@@ -626,6 +639,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               if (entry.isLocked) {
                 setSelectedLockedEntry(entry);
                 setPasswordModalVisible(true);
+                setEntryActionType('view');
               } else if (onViewEntry) {
                 onViewEntry(entry);
               } else {
@@ -647,6 +661,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
               if (entry.isLocked) {
                 setSelectedLockedEntry(entry);
                 setPasswordModalVisible(true);
+                setEntryActionType('edit');
               } else if (onEditEntry) {
                 onEditEntry(entry);
               }
@@ -754,7 +769,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                 )}
                 <EntryCardContent>
                   <EntryCardHeader>
-                    <EntryTitle isLocked={entry.isLocked}>{entry.title}</EntryTitle>
+                    <EntryTitle isLocked={entry.isLocked}>{entry.isLocked ? '••••••••' : entry.title}</EntryTitle>
                     <EntryStatusIcons>
                       {entry.isLocked && <EntryStatusIcon>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -777,7 +792,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                     </EntryStatusIcons>
                   </EntryCardHeader>
                   <EntryDate>{formatDate(entry.date)}</EntryDate>
-                  <EntryPreview isLocked={entry.isLocked}>{entry.content}</EntryPreview>
+                  <EntryPreview isLocked={entry.isLocked}>{entry.isLocked ? '••••••••••••••••••••••••••••••••••' : entry.content}</EntryPreview>
                 </EntryCardContent>
                 
                 <CardActions>
@@ -823,15 +838,28 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       {/* Password Modal for locked entries */}
       <PasswordModal 
         isVisible={passwordModalVisible}
-        onUnlock={() => {
-          if (selectedLockedEntry) {
-            // When unlocked, navigate to the entry
-            if (onViewEntry) {
-              onViewEntry(selectedLockedEntry);
-            } else if (onEditEntry) {
-              onEditEntry(selectedLockedEntry);
+        onUnlock={async () => {
+          if (selectedLockedEntry && userEmail) {
+            // Create a decrypted copy of the entry
+            const decryptedEntry = {...selectedLockedEntry};
+            
+            // Decrypt title if it appears to be encrypted
+            if (isEncrypted(decryptedEntry.title)) {
+              decryptedEntry.title = decryptText(decryptedEntry.title, userEmail);
+            }
+            
+            // Decrypt content if it appears to be encrypted
+            if (isEncrypted(decryptedEntry.content)) {
+              decryptedEntry.content = decryptText(decryptedEntry.content, userEmail);
+            }
+            
+            // When unlocked, navigate to the entry with decrypted content
+            if (entryActionType === 'view' && onViewEntry) {
+              onViewEntry(decryptedEntry);
+            } else if (entryActionType === 'edit' && onEditEntry) {
+              onEditEntry(decryptedEntry);
             } else {
-              setSelectedEntry(selectedLockedEntry);
+              setSelectedEntry(decryptedEntry);
             }
             setPasswordModalVisible(false);
             setSelectedLockedEntry(null);

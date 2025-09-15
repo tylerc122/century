@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
 import { isEntryFromToday } from '../utils/dateUtils';
+import { encryptText } from '../utils/encryptionUtils';
+import passwordService from '../services/passwordService';
 
 interface EntryPageProps {
   entry?: DiaryEntry;
@@ -433,6 +435,8 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
   // Delete functionality removed from edit view
   const [canEdit, setCanEdit] = useState(true);
   const [showEditWarning, setShowEditWarning] = useState(false);
+  // State for handling password when locking
+  const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -510,9 +514,23 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
         newImages.push(img);
       });
       
+      // If entry is locked, encrypt sensitive content
+      let entryContent = content;
+      let entryTitle = title;
+      
+      if (isLocked) {
+        // Get current user email to use as part of encryption key
+        const userEmail = await passwordService.getCurrentUserEmail();
+        if (userEmail) {
+          // Encrypt content and title with account credentials
+          entryContent = encryptText(content, userEmail);
+          entryTitle = encryptText(title, userEmail);
+        }
+      }
+      
       const entryData: Omit<DiaryEntry, 'id'> & { id?: string } = {
-        title,
-        content,
+        title: entryTitle,
+        content: entryContent,
         date: selectedDate,
         createdAt: new Date(),
         images: newImages, // Use the reordered images
@@ -597,156 +615,225 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
   // Delete functionality moved to ViewEntryPage
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>
-          {entry ? 'Edit Entry' : 'New Entry'}
-          {entry?.isRetroactive && (
-            <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', color: '#888' }}>
-              (Added retroactively)
-            </span>
-          )}
-        </PageTitle>
-        <ActionButtons>
-          {/* Delete button removed from edit view */}
-          <CancelButton onClick={onCancel}>Cancel</CancelButton>
-          <SaveButton onClick={handleSave}>Save</SaveButton>
-        </ActionButtons>
-      </PageHeader>
-      
-      <EditorContainer>
-        <EditorContent>
-          {showEditWarning && (
-            <WarningBanner>
-              <WarningText>
-                <strong>Notice:</strong> This entry is from a past date and cannot be edited.
-                Only today's entries can be modified.
-              </WarningText>
-              <CloseWarningButton onClick={() => setShowEditWarning(false)}>
-                ×
-              </CloseWarningButton>
-            </WarningBanner>
-          )}
-          
-          <TitleInput 
-            type="text" 
-            placeholder="Entry title" 
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-            disabled={!canEdit}
-            readOnly={!canEdit}
-          />
-          
-          <TextArea 
-            placeholder="Write your thoughts..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            disabled={!canEdit}
-            readOnly={!canEdit}
-          />
-        </EditorContent>
-        
-        <EditorSidebar>
-          <SidebarSection>
-            <SidebarTitle>Entry Details</SidebarTitle>
-            <FormGroup>
-              <Label htmlFor="date">Date</Label>
-              <Input 
-                type="date" 
-                id="date" 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
-              />
-            </FormGroup>
-          </SidebarSection>
-          
-          <SidebarSection>
-            <SidebarTitle>Images <span style={{fontSize: '0.8rem', fontWeight: 'normal'}}>(Select up to 4 cover photos)</span></SidebarTitle>
-            <ImageUploadArea onClick={triggerImageUpload}>
-              <UploadText>Click to add images</UploadText>
-              <input 
-                type="file" 
-                accept="image/*" 
-                multiple 
-                style={{ display: 'none' }}
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-              />
-            </ImageUploadArea>
-            
-            {images.length > 0 && (
-              <ImagePreviewContainer>
-                {images.map((image, index) => (
-                  <ImagePreview key={index} isCover={coverPhotos.includes(index)}>
-                    <Image src={image} alt={`Image ${index + 1}`} />
-                    <RemoveImageButton onClick={() => handleRemoveImage(index)}>×</RemoveImageButton>
-                    {coverPhotos.includes(index) && (
-                      <CoverBadge>
-                        Cover {coverPhotos.indexOf(index) + 1}
-                      </CoverBadge>
-                    )}
-                    <ImageActionButtons>
-                      <ImageActionButton 
-                        onClick={() => handleToggleCoverPhoto(index)}
-                        title={coverPhotos.includes(index) ? 'Remove from covers' : 'Set as cover'}
-                      >
-                        {coverPhotos.includes(index) ? '★' : '☆'}
-                      </ImageActionButton>
-                    </ImageActionButtons>
-                  </ImagePreview>
-                ))}
-              </ImagePreviewContainer>
+    <>
+      <PageContainer>
+        <PageHeader>
+          <PageTitle>
+            {entry ? 'Edit Entry' : 'New Entry'}
+            {entry?.isRetroactive && (
+              <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', color: '#888' }}>
+                (Added retroactively)
+              </span>
             )}
-          </SidebarSection>
+          </PageTitle>
+          <ActionButtons>
+            {/* Delete button removed from edit view */}
+            <CancelButton onClick={onCancel}>Cancel</CancelButton>
+            <SaveButton onClick={handleSave}>Save</SaveButton>
+          </ActionButtons>
+        </PageHeader>
+        
+        <EditorContainer>
+          <EditorContent>
+            {showEditWarning && (
+              <WarningBanner>
+                <WarningText>
+                  <strong>Notice:</strong> This entry is from a past date and cannot be edited.
+                  Only today's entries can be modified.
+                </WarningText>
+                <CloseWarningButton onClick={() => setShowEditWarning(false)}>
+                  ×
+                </CloseWarningButton>
+              </WarningBanner>
+            )}
+            
+            <TitleInput 
+              type="text" 
+              placeholder="Entry title" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+              disabled={!canEdit}
+              readOnly={!canEdit}
+            />
+            
+            <TextArea 
+              placeholder="Write your thoughts..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              disabled={!canEdit}
+              readOnly={!canEdit}
+            />
+          </EditorContent>
           
-          <SidebarSection>
-            <SidebarTitle>Options</SidebarTitle>
-            <ToggleGroup>
-              <ToggleLabel htmlFor="lock-toggle">
-                <ToggleInput 
-                  type="checkbox" 
-                  id="lock-toggle" 
-                  checked={isLocked}
-                  onChange={() => setIsLocked(!isLocked)}
+          <EditorSidebar>
+            <SidebarSection>
+              <SidebarTitle>Entry Details</SidebarTitle>
+              <FormGroup>
+                <Label htmlFor="date">Date</Label>
+                <Input 
+                  type="date" 
+                  id="date" 
+                  value={date} 
+                  onChange={(e) => setDate(e.target.value)} 
                 />
-                <ToggleSwitch checked={isLocked} />
-                <span>
-                  {isLocked ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px'}}>
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                      Entry Locked
-                    </>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px'}}>
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                      Lock Entry
-                    </>
-                  )}
-                </span>
-              </ToggleLabel>
+              </FormGroup>
+            </SidebarSection>
+            
+            <SidebarSection>
+              <SidebarTitle>Images <span style={{fontSize: '0.8rem', fontWeight: 'normal'}}>(Select up to 4 cover photos)</span></SidebarTitle>
+              <ImageUploadArea onClick={triggerImageUpload}>
+                <UploadText>Click to add images</UploadText>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                />
+              </ImageUploadArea>
+              
+              {images.length > 0 && (
+                <ImagePreviewContainer>
+                  {images.map((image, index) => (
+                    <ImagePreview key={index} isCover={coverPhotos.includes(index)}>
+                      <Image src={image} alt={`Image ${index + 1}`} />
+                      <RemoveImageButton onClick={() => handleRemoveImage(index)}>×</RemoveImageButton>
+                      {coverPhotos.includes(index) && (
+                        <CoverBadge>
+                          Cover {coverPhotos.indexOf(index) + 1}
+                        </CoverBadge>
+                      )}
+                      <ImageActionButtons>
+                        <ImageActionButton 
+                          onClick={() => handleToggleCoverPhoto(index)}
+                          title={coverPhotos.includes(index) ? 'Remove from covers' : 'Set as cover'}
+                        >
+                          {coverPhotos.includes(index) ? '★' : '☆'}
+                        </ImageActionButton>
+                      </ImageActionButtons>
+                    </ImagePreview>
+                  ))}
+                </ImagePreviewContainer>
+              )}
+            </SidebarSection>
+            
+            <SidebarSection>
+              <SidebarTitle>Options</SidebarTitle>
+              <ToggleGroup>
+                <ToggleLabel htmlFor="lock-toggle">
+                  <ToggleInput 
+                    type="checkbox" 
+                    id="lock-toggle" 
+                    checked={isLocked}
+                    onChange={() => {
+                      // If toggling from unlocked to locked, we need the user's password
+                      if (!isLocked) {
+                        setIsPasswordModalVisible(true);
+                      } else {
+                        // When unlocking, we can just toggle directly
+                        setIsLocked(false);
+                      }
+                    }}
+                  />
+                  <ToggleSwitch checked={isLocked} />
+                  <span>
+                    {isLocked ? (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px'}}>
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Entry Locked
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px'}}>
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Lock Entry
+                      </>
+                    )}
+                  </span>
+                </ToggleLabel>
 
-              <ToggleLabel htmlFor="favorite-toggle">
-                <ToggleInput 
-                  type="checkbox" 
-                  id="favorite-toggle" 
-                  checked={isFavorite}
-                  onChange={() => setIsFavorite(!isFavorite)}
-                />
-                <ToggleSwitch checked={isFavorite} />
-                <span>{isFavorite ? '⭐ Favorite' : '☆ Add to Favorites'}</span>
-              </ToggleLabel>
-            </ToggleGroup>
-          </SidebarSection>
-        </EditorSidebar>
-      </EditorContainer>
-    </PageContainer>
+                <ToggleLabel htmlFor="favorite-toggle">
+                  <ToggleInput 
+                    type="checkbox" 
+                    id="favorite-toggle" 
+                    checked={isFavorite}
+                    onChange={() => setIsFavorite(!isFavorite)}
+                  />
+                  <ToggleSwitch checked={isFavorite} />
+                  <span>{isFavorite ? '⭐ Favorite' : '☆ Add to Favorites'}</span>
+                </ToggleLabel>
+              </ToggleGroup>
+            </SidebarSection>
+          </EditorSidebar>
+        </EditorContainer>
+      </PageContainer>
+    
+      {/* Password modal for locking entries */}
+      {isPasswordModalVisible && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: '8px',
+              maxWidth: '400px',
+              width: '100%',
+            }}
+          >
+            <h3>Confirm Lock Entry</h3>
+            <p>Locking this entry will encrypt its content with your account password.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+              <button
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#e0e0e0',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                onClick={() => setIsPasswordModalVisible(false)}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#D2691E',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                onClick={() => {
+                  setIsLocked(true);
+                  setIsPasswordModalVisible(false);
+                }}
+              >
+                Lock Entry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

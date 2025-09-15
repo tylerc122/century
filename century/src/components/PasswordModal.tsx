@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import passwordService from '../services/passwordService';
 
 interface PasswordModalProps {
   onUnlock?: () => void;
@@ -125,11 +126,21 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
   // For password unlock mode (original functionality)
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   
   // Determine if we're in password change mode
   const isChangeMode = setCurrentPassword !== undefined && setNewPassword !== undefined;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Get user email for display
+    const getUserEmail = async () => {
+      const email = await passwordService.getCurrentUserEmail();
+      setUserEmail(email);
+    };
+    getUserEmail();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isChangeMode) {
@@ -143,13 +154,23 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
         setError('');
       }
     } else {
-      // Password unlock mode (original functionality)
+      // Password unlock mode (account password validation)
       if (password.trim() === '') {
-        setError('Please enter a password');
-      } else if (onUnlock) {
-        onUnlock();
-        setPassword('');
-        setError('');
+        setError('Please enter your password');
+        return;
+      }
+      
+      try {
+        const isValid = await passwordService.validatePassword(password);
+        if (isValid && onUnlock) {
+          onUnlock();
+          setPassword('');
+          setError('');
+        } else {
+          setError('Incorrect password');
+        }
+      } catch (err) {
+        setError('Authentication failed. Please try again.');
       }
     }
   };
@@ -180,7 +201,7 @@ const PasswordModal: React.FC<PasswordModalProps> = ({
             // Password unlock mode UI (original functionality)
             <Input
               type="password"
-              placeholder="Enter password to unlock"
+              placeholder={`Enter your account password${userEmail ? ` (${userEmail})` : ''}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
