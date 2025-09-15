@@ -7,7 +7,7 @@ interface PasswordModalProps {
   onSubmit?: () => void;
   onCancel: () => void;
   isVisible?: boolean;
-  title?: string;
+  title?: string | React.ReactNode;
   currentPassword?: string;
   setCurrentPassword?: React.Dispatch<React.SetStateAction<string>>;
   newPassword?: string;

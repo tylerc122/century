@@ -5,7 +5,7 @@ import diaryService from '../services/diaryService';
 import MemoryView from '../components/MemoryView';
 import PasswordModal from './PasswordModal';
 import { isEntryFromToday, formatDate as formatDateUtil } from '../utils/dateUtils';
-import { decryptText, isEncrypted } from '../utils/encryptionUtils';
+import { decryptText, isEncrypted, encryptText } from '../utils/encryptionUtils';
 import passwordService from '../services/passwordService';
 
 // Styled components
@@ -403,6 +403,14 @@ const EditButton = styled(ActionButton)<{ disabled?: boolean }>`
   }
 `;
 
+const LockButton = styled(ActionButton)`
+  background-color: ${({ theme }) => theme.light};
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.border};
+  }
+`;
+
 
 
 const LoadingMessage = styled.div`
@@ -457,7 +465,7 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
-  const [entryActionType, setEntryActionType] = useState<'view' | 'edit'>('view');
+  const [entryActionType, setEntryActionType] = useState<'view' | 'edit' | 'lock' | 'unlock'>('view');
   const [userEmail, setUserEmail] = useState<string | null>(null);
   
   // Get user email for decryption
@@ -796,6 +804,30 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                 </EntryCardContent>
                 
                 <CardActions>
+                  <LockButton 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click
+                      
+                      // If currently locked, need to unlock
+                      if (entry.isLocked) {
+                        setSelectedLockedEntry(entry);
+                        setPasswordModalVisible(true);
+                        setEntryActionType('unlock');
+                      } else {
+                        // If currently unlocked, need to lock
+                        setSelectedLockedEntry(entry);
+                        setPasswordModalVisible(true);
+                        setEntryActionType('lock');
+                      }
+                    }}
+                    title={entry.isLocked ? 'Unlock this entry' : 'Lock this entry'}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    {entry.isLocked ? 'Unlock' : 'Lock'}
+                  </LockButton>
                   <EditButton 
                     onClick={handleEditClick} 
                     disabled={!isEditable} 
@@ -838,29 +870,100 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       {/* Password Modal for locked entries */}
       <PasswordModal 
         isVisible={passwordModalVisible}
+        title={entryActionType === 'lock' ? 
+          <>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px', verticalAlign: 'middle'}}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Lock Entry
+          </> : 
+          entryActionType === 'unlock' ?
+          <>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: '6px', verticalAlign: 'middle'}}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Unlock Entry
+          </> :
+          undefined
+        }
         onUnlock={async () => {
           if (selectedLockedEntry && userEmail) {
-            // Create a decrypted copy of the entry
-            const decryptedEntry = {...selectedLockedEntry};
-            
-            // Decrypt title if it appears to be encrypted
-            if (isEncrypted(decryptedEntry.title)) {
-              decryptedEntry.title = decryptText(decryptedEntry.title, userEmail);
+            if (entryActionType === 'view' || entryActionType === 'edit') {
+              // Create a decrypted copy of the entry
+              const decryptedEntry = {...selectedLockedEntry};
+              
+              // Decrypt title if it appears to be encrypted
+              if (isEncrypted(decryptedEntry.title)) {
+                decryptedEntry.title = decryptText(decryptedEntry.title, userEmail);
+              }
+              
+              // Decrypt content if it appears to be encrypted
+              if (isEncrypted(decryptedEntry.content)) {
+                decryptedEntry.content = decryptText(decryptedEntry.content, userEmail);
+              }
+              
+              // When unlocked, navigate to the entry with decrypted content
+              if (entryActionType === 'view' && onViewEntry) {
+                onViewEntry(decryptedEntry);
+              } else if (entryActionType === 'edit' && onEditEntry) {
+                onEditEntry(decryptedEntry);
+              } else {
+                setSelectedEntry(decryptedEntry);
+              }
+            } else if (entryActionType === 'lock') {
+              // Lock the entry
+              try {
+                // Create a copy of the entry with locked status updated
+                const updatedEntry = {
+                  ...selectedLockedEntry,
+                  isLocked: true
+                };
+                
+                // Encrypt title and content
+                updatedEntry.title = encryptText(updatedEntry.title, userEmail);
+                updatedEntry.content = encryptText(updatedEntry.content, userEmail);
+                
+                // Update the entry in the database
+                await diaryService.updateEntry(updatedEntry);
+                
+                // Refresh the entries list
+                loadEntries();
+              } catch (error) {
+                console.error('Error locking entry:', error);
+                alert('Failed to lock entry. Please try again.');
+              }
+            } else if (entryActionType === 'unlock') {
+              // Unlock the entry
+              try {
+                // Create a decrypted copy of the entry
+                const decryptedEntry = {...selectedLockedEntry};
+                
+                // Decrypt title if it appears to be encrypted
+                if (isEncrypted(decryptedEntry.title)) {
+                  decryptedEntry.title = decryptText(decryptedEntry.title, userEmail);
+                }
+                
+                // Decrypt content if it appears to be encrypted
+                if (isEncrypted(decryptedEntry.content)) {
+                  decryptedEntry.content = decryptText(decryptedEntry.content, userEmail);
+                }
+                
+                // Update the lock status
+                decryptedEntry.isLocked = false;
+                
+                // Update the entry in the database
+                await diaryService.updateEntry(decryptedEntry);
+                
+                // Refresh the entries list
+                loadEntries();
+              } catch (error) {
+                console.error('Error unlocking entry:', error);
+                alert('Failed to unlock entry. Please try again.');
+              }
             }
             
-            // Decrypt content if it appears to be encrypted
-            if (isEncrypted(decryptedEntry.content)) {
-              decryptedEntry.content = decryptText(decryptedEntry.content, userEmail);
-            }
-            
-            // When unlocked, navigate to the entry with decrypted content
-            if (entryActionType === 'view' && onViewEntry) {
-              onViewEntry(decryptedEntry);
-            } else if (entryActionType === 'edit' && onEditEntry) {
-              onEditEntry(decryptedEntry);
-            } else {
-              setSelectedEntry(decryptedEntry);
-            }
             setPasswordModalVisible(false);
             setSelectedLockedEntry(null);
           }
