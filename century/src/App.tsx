@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import MainApp from './pages/App'; // Renamed to MainApp
+import MainApp from './pages/MainApp'; // Correctly import the new component
 
 // Protected route component
 interface ProtectedRouteProps {
