@@ -82,11 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       await authService.logout();
-      setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
-      throw error;
     } finally {
+      // Always log out locally even if server fails
+      setUser(null);
       setIsLoading(false);
     }
   };
