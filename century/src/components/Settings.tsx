@@ -279,10 +279,10 @@ const DialogButtons = styled.div`
 `;
 
 interface SettingsProps {
-  // Add any props needed
+  onLogout?: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = () => {
+const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const themeContext = useContext(ThemeContext);
   
   // State for settings
@@ -840,6 +840,14 @@ const Settings: React.FC<SettingsProps> = () => {
             <SettingDescription>Permanently delete your account and all data</SettingDescription>
           </SettingLabel>
           <DangerButton onClick={() => setShowDeleteConfirm(true)}>Delete Account</DangerButton>
+        </SettingRow>
+
+        <SettingRow>
+          <SettingLabel>
+            Log Out
+            <SettingDescription>Sign out of your account</SettingDescription>
+          </SettingLabel>
+          <SecondaryButton onClick={onLogout}>Log Out</SecondaryButton>
         </SettingRow>
       </SettingsSection>
 

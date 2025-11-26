@@ -79,19 +79,6 @@ const NewEntryButton = styled.button`
   }
 `;
 
-const LogoutButton = styled.button`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.secondary};
-  font-size: 0.8rem;
-  cursor: pointer;
-  
-  &:hover {
-    text-decoration: underline;
-    color: ${({ theme }) => theme.foreground};
-  }
-`;
-
 const Content = styled.main`
   flex: 1;
   display: flex;
@@ -153,7 +140,6 @@ function MainApp() {
       <Header>
         <Title onClick={() => setActiveView('entries')}>century</Title>
         <HeaderControls>
-          <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
           <NewEntryButton onClick={() => {
             setSelectedEntry(undefined);
             setActiveView('entry');
@@ -177,7 +163,7 @@ function MainApp() {
           />
         )}
         {activeView === 'profile' && <Profile onSelectEntry={handleSelectEntry} />}
-        {activeView === 'settings' && <Settings />}
+        {activeView === 'settings' && <Settings onLogout={handleLogout} />}
         {activeView === 'viewEntry' && selectedEntry && (
           <ViewEntryPage
             entry={selectedEntry}

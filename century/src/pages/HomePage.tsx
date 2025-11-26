@@ -90,6 +90,43 @@ const HomePage: React.FC = () => {
           Login
         </SecondaryButton>
       </ButtonContainer>
+      
+      <div style={{ 
+        position: 'absolute', 
+        bottom: '2rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: '0.5rem' 
+      }}>
+        <p style={{ color: '#888', marginBottom: '0.5rem' }}>Grab the desktop version here:</p>
+        <div style={{ display: 'flex', gap: '1.5rem' }}>
+          <a 
+            href="/century-installer.dmg" 
+            download 
+            style={{ 
+              color: 'inherit', 
+              textDecoration: 'underline', 
+              fontSize: '0.9rem',
+              cursor: 'pointer' 
+            }}
+          >
+            Download for Mac
+          </a>
+          <a 
+            href="/century-setup.exe" 
+            download 
+            style={{ 
+              color: 'inherit', 
+              textDecoration: 'underline', 
+              fontSize: '0.9rem',
+              cursor: 'pointer' 
+            }}
+          >
+            Download for Windows
+          </a>
+        </div>
+      </div>
     </Container>
   );
 };
