@@ -27,26 +27,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Check authentication status on mount
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const isAuthenticated = await authService.isAuthenticated();
+        const currentUser = await authService.getCurrentUser();
         
-        if (isAuthenticated) {
-          const currentUser = await authService.getCurrentUser();
+        if (isMounted) {
           setUser(currentUser);
-        } else {
-          setUser(null);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
   
   // Login function

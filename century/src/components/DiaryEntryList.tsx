@@ -523,6 +523,13 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       const loadedEntries = await diaryService.getAllEntries();
       setEntries(loadedEntries);
       applyFiltersAndSort(loadedEntries, searchQuery, sortCriteria, sortAscending);
+
+      diaryService.getAllEntries(true).then((freshEntries) => {
+        setEntries(freshEntries);
+        applyFiltersAndSort(freshEntries, searchQuery, sortCriteria, sortAscending);
+      }).catch((error) => {
+        console.error('Failed to refresh entries:', error);
+      });
     } catch (error) {
       console.error('Failed to load entries:', error);
       setEntries([]);

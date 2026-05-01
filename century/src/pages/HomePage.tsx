@@ -139,9 +139,6 @@ const HomePage: React.FC = () => {
           <DownloadLink href="/century-installer.dmg" download>
             Download for Mac
           </DownloadLink>
-          <DownloadLink href="/century-setup.exe" download>
-            Download for Windows
-          </DownloadLink>
         </DownloadLinks>
       </DownloadPanel>
     </Container>

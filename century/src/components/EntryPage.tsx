@@ -59,6 +59,7 @@ const EditorContainer = styled.div`
   display: flex;
   flex: 1;
   height: calc(100vh - 140px);
+  background: ${({ theme }) => `linear-gradient(180deg, ${theme.background} 0%, ${theme.cardBackground} 100%)`};
   
   @media (max-width: 768px) {
     flex-direction: column;
@@ -68,9 +69,9 @@ const EditorContainer = styled.div`
 
 const EditorContent = styled.div`
   flex: 1;
-  max-width: 900px;
+  max-width: 820px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem 2rem 4rem;
   width: 100%;
   
   @media (max-width: 768px) {
@@ -80,7 +81,7 @@ const EditorContent = styled.div`
 `;
 
 const EditorSidebar = styled.div`
-  width: 280px;
+  width: 300px;
   border-left: 1px solid ${({ theme }) => theme.border};
   padding: 1.5rem;
   background-color: ${({ theme }) => theme.headerBackground || theme.background};
@@ -101,6 +102,27 @@ const ActionButtons = styled.div`
     width: 100%;
     justify-content: flex-end;
   }
+`;
+
+const WritingSurface = styled.div`
+  background-color: ${({ theme }) => theme.cardBackground};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgba(93, 64, 55, 0.12);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+`;
+
+const WritingMeta = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: ${({ theme }) => theme.secondary};
+  font-size: 0.82rem;
 `;
 
 const Button = styled.button`
@@ -205,13 +227,15 @@ const CloseWarningButton = styled.button`
 `;
 
 const TitleInput = styled(Input)<{ disabled?: boolean }>`
-  font-size: 1.5rem;
-  padding: 1rem 0;
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  padding: 0 0 1rem;
   border: none;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   border-radius: 0;
-  font-weight: 500;
+  font-weight: 650;
   margin-bottom: 1.5rem;
+  background-color: transparent;
+  letter-spacing: 0;
   
   &:focus {
     border-color: ${({ theme }) => theme.primary};
@@ -227,13 +251,13 @@ const TitleInput = styled(Input)<{ disabled?: boolean }>`
 
 const TextArea = styled.textarea<{ disabled?: boolean }>`
   width: 100%;
-  min-height: calc(100vh - 300px);
+  min-height: calc(100vh - 390px);
   padding: 1rem 0;
   border: none;
-  background-color: ${({ theme }) => theme.background};
+  background-color: transparent;
   color: ${({ theme }) => theme.foreground};
   font-size: 1.1rem;
-  line-height: 1.6;
+  line-height: 1.75;
   resize: none;
   
   &:focus {
@@ -480,6 +504,8 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
   // State for handling password when locking
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const characterCount = content.length;
 
   useEffect(() => {
     if (entry) {
@@ -689,23 +715,30 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
               </WarningBanner>
             )}
             
-            <TitleInput 
-              type="text" 
-              placeholder="Entry title" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              disabled={!canEdit}
-              readOnly={!canEdit}
-            />
-            
-            <TextArea 
-              placeholder="Write your thoughts..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              disabled={!canEdit}
-              readOnly={!canEdit}
-            />
+            <WritingSurface>
+              <TitleInput 
+                type="text" 
+                placeholder="Give this moment a name" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+                disabled={!canEdit}
+                readOnly={!canEdit}
+              />
+              
+              <TextArea 
+                placeholder="Start writing. No ceremony required."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                disabled={!canEdit}
+                readOnly={!canEdit}
+              />
+
+              <WritingMeta>
+                <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+                <span>{characterCount} characters</span>
+              </WritingMeta>
+            </WritingSurface>
           </EditorContent>
           
           <EditorSidebar>

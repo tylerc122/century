@@ -39,11 +39,11 @@ class DiaryStorage {
   }
   
   // Get all entries
-  async getAllEntries(): Promise<DiaryEntry[]> {
+  async getAllEntries(forceRefresh = false): Promise<DiaryEntry[]> {
     try {
       // Check cache first
       const cachedEntries = storageService.getCachedEntries();
-      if (cachedEntries && storageService.hasFreshCache()) {
+      if (cachedEntries && !forceRefresh) {
         console.log('Using cached entries');
         this.cachedEntries = cachedEntries;
         return cachedEntries;
@@ -206,8 +206,7 @@ class DiaryStorage {
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
       
-      // Force fresh fetch on next getAllEntries call by clearing internal cache
-      this.cachedEntries = null;
+      this.cachedEntries = [newEntry, ...(this.cachedEntries || [])];
       
       return newEntry;
     } catch (error) {
@@ -259,8 +258,9 @@ class DiaryStorage {
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
       
-      // Force fresh fetch on next getAllEntries call by clearing internal cache
-      this.cachedEntries = null;
+      this.cachedEntries = (this.cachedEntries || []).map(entry => 
+        entry.id === updatedEntry.id ? updatedEntry : entry
+      );
       
       return updatedEntry;
     } catch (error) {
@@ -294,8 +294,7 @@ class DiaryStorage {
       // Clear stats cache since stats have changed
       storageService.clearStatsCache();
       
-      // Force fresh fetch on next getAllEntries call by clearing internal cache
-      this.cachedEntries = null;
+      this.cachedEntries = (this.cachedEntries || []).filter(entry => entry.id !== entryId);
     } catch (error) {
       console.error('Error deleting entry:', error);
       throw error;
@@ -475,8 +474,8 @@ export interface UserProfileData {
 }
 
 export const diaryService = {
-  getAllEntries: async (): Promise<DiaryEntry[]> => {
-    return storage.getAllEntries();
+  getAllEntries: async (forceRefresh = false): Promise<DiaryEntry[]> => {
+    return storage.getAllEntries(forceRefresh);
   },
   
   searchEntries: async (query: string): Promise<DiaryEntry[]> => {
@@ -541,6 +540,11 @@ export const diaryService = {
   // User profile methods
   getUserProfile: async (): Promise<UserProfileData> => {
     try {
+      const cachedProfile = storageService.getCachedProfile();
+      if (cachedProfile) {
+        return cachedProfile;
+      }
+
       // Get current user
       const { data: authData } = await supabase.auth.getUser();
       if (!authData?.user) {
@@ -559,10 +563,13 @@ export const diaryService = {
         return { username: 'User', profilePicture: null };
       }
       
-      return { 
+      const profile = { 
         username: data.username, 
         profilePicture: data.profile_picture 
       };
+
+      storageService.cacheProfile(profile);
+      return profile;
     } catch (error) {
       console.error('Error loading user profile:', error);
       return { username: 'User', profilePicture: null };
