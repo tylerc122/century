@@ -32,6 +32,7 @@ const PageHeader = styled.div`
   position: sticky;
   top: 0;
   background-color: ${({ theme }) => theme.headerBackground || theme.background};
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
   z-index: 10;
   
   @media (max-width: 768px) {
@@ -82,7 +83,7 @@ const EditorSidebar = styled.div`
   width: 280px;
   border-left: 1px solid ${({ theme }) => theme.border};
   padding: 1.5rem;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.headerBackground || theme.background};
   
   @media (max-width: 768px) {
     width: 100%;
@@ -317,6 +318,7 @@ const ImageUploadArea = styled.div`
   text-align: center;
   margin-bottom: 1rem;
   cursor: pointer;
+  background-color: ${({ theme }) => theme.cardBackground};
   
   &:hover {
     border-color: ${({ theme }) => theme.primary};
@@ -343,7 +345,7 @@ const ImagePreview = styled.div<{ isCover?: boolean }>`
   position: relative;
   width: 100%;
   padding-top: 100%; /* 1:1 Aspect Ratio */
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
   border: ${({ isCover }) => isCover ? '2px solid #f0b979' : 'none'};
   box-shadow: ${({ isCover }) => isCover ? '0 0 8px rgba(240, 185, 121, 0.6)' : 'none'};
@@ -422,6 +424,46 @@ const ImageActionButton = styled.button`
   &:hover {
     background-color: rgba(0, 0, 0, 0.7);
   }
+`;
+
+const LockModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.52);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+const LockModal = styled.div`
+  background-color: ${({ theme }) => theme.cardBackground};
+  color: ${({ theme }) => theme.foreground};
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+  max-width: 420px;
+  width: 100%;
+`;
+
+const LockModalTitle = styled.h3`
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+`;
+
+const LockModalText = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.secondary};
+  line-height: 1.5;
+`;
+
+const LockModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
 `;
 
 const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefresh }) => {
@@ -777,61 +819,25 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
     
       {/* Password modal for locking entries */}
       {isPasswordModalVisible && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '8px',
-              maxWidth: '400px',
-              width: '100%',
-            }}
-          >
-            <h3>Confirm Lock Entry</h3>
-            <p>Locking this entry will encrypt its content with your account password.</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-              <button
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#e0e0e0',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-                onClick={() => setIsPasswordModalVisible(false)}
-              >
+        <LockModalOverlay>
+          <LockModal>
+            <LockModalTitle>Confirm Lock Entry</LockModalTitle>
+            <LockModalText>Locking this entry will encrypt its content with your account password.</LockModalText>
+            <LockModalActions>
+              <CancelButton onClick={() => setIsPasswordModalVisible(false)}>
                 Cancel
-              </button>
-              <button
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#D2691E',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
+              </CancelButton>
+              <SaveButton
                 onClick={() => {
                   setIsLocked(true);
                   setIsPasswordModalVisible(false);
                 }}
               >
                 Lock Entry
-              </button>
-            </div>
-          </div>
-        </div>
+              </SaveButton>
+            </LockModalActions>
+          </LockModal>
+        </LockModalOverlay>
       )}
     </>
   );

@@ -7,11 +7,12 @@ import PasswordModal from './PasswordModal';
 interface MemoryViewProps {
   onSelectEntry: (entry: DiaryEntry) => void;
   onViewEntry?: (entry: DiaryEntry) => void;
+  entries?: DiaryEntry[];
 }
 
 // Styled components
 const MemoryContainer = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 `;
 
 const MemoryHeader = styled.div`
@@ -41,12 +42,12 @@ const MemoryBadge = styled.span`
 `;
 
 const MemoryCard = styled.div<{ isLocked?: boolean }>`
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   border-radius: 8px;
   background-color: ${({ theme }) => theme.cardBackground};
   box-shadow: ${({ theme }) => theme.cardShadow};
-  transition: transform 0.2s ease;
   cursor: pointer;
+  border: 1px solid ${({ theme }) => theme.border};
   border-left: 4px solid ${({ theme }) => theme.info};
   position: relative;
 
@@ -103,7 +104,7 @@ const getMemoriesFromPast = (entries: DiaryEntry[]): DiaryEntry[] => {
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry, onViewEntry }) => {
+const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry, onViewEntry, entries }) => {
   const [memories, setMemories] = useState<DiaryEntry[]>([]);
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [selectedLockedEntry, setSelectedLockedEntry] = useState<DiaryEntry | null>(null);
@@ -111,8 +112,8 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry, onViewEntry }) =
   useEffect(() => {
     const loadMemories = async () => {
       try {
-        const entries = await diaryService.getAllEntries();
-        const pastMemories = getMemoriesFromPast(entries);
+        const sourceEntries = entries ?? await diaryService.getAllEntries();
+        const pastMemories = getMemoriesFromPast(sourceEntries);
         setMemories(pastMemories);
       } catch (error) {
         console.error('Failed to load memories:', error);
@@ -121,7 +122,7 @@ const MemoryView: React.FC<MemoryViewProps> = ({ onSelectEntry, onViewEntry }) =
     };
     
     loadMemories();
-  }, []);
+  }, [entries]);
 
   const handleMemoryClick = (memory: DiaryEntry) => {
     if (memory.isLocked) {

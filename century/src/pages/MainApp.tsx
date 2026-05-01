@@ -16,18 +16,19 @@ const AppContainer = styled.div`
   flex-direction: column;
   background-color: ${({ theme }) => theme.background};
   color: ${({ theme }) => theme.foreground};
-  transition: all 0.3s ease;
   font-family: var(--font-family);
   font-size: var(--font-size);
 `;
 
 const Header = styled.header`
-  padding: 16px 20px;
-  background-color: transparent;
+  padding: 14px 24px;
+  background-color: ${({ theme }) => theme.headerBackground || theme.background};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(215, 204, 200, 0.5);
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) inset;
+  z-index: 20;
 `;
 
 const Title = styled.h1`
@@ -52,13 +53,14 @@ const HeaderControls = styled.div`
 `;
 
 const NewEntryButton = styled.button`
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background-color: ${({ theme }) => theme.primary};
   border: none;
   color: white;
-  font-size: 16px;
+  font-size: 22px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,29 +85,36 @@ const Content = styled.main`
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 0;
 `;
 
 const Navigation = styled.nav`
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
   background-color: ${({ theme }) => theme.navBackground};
   border-top: 1px solid ${({ theme }) => theme.border};
 `;
 
 const NavButton = styled.button<{ active: boolean }>`
-  padding: 0.5rem 1rem;
-  margin: 0 0.5rem;
-  border: none;
-  border-radius: 4px;
-  background-color: ${props => props.active ? props.theme.primary : props.theme.light};
+  min-width: 104px;
+  padding: 0.6rem 1rem;
+  border: 1px solid ${props => props.active ? props.theme.primary : 'transparent'};
+  border-radius: 8px;
+  background-color: ${props => props.active ? props.theme.primary : 'transparent'};
   color: ${props => props.active ? '#fff' : props.theme.foreground};
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
 
   &:hover {
-    background-color: ${props => props.active ? props.theme.primary + 'dd' : props.theme.light + 'dd'};
+    background-color: ${props => props.active ? props.theme.primary + 'dd' : props.theme.light};
+  }
+
+  @media (max-width: 520px) {
+    min-width: 0;
+    flex: 1;
+    padding-inline: 0.5rem;
   }
 `;
 
@@ -143,7 +152,7 @@ function MainApp() {
           <NewEntryButton onClick={() => {
             setSelectedEntry(undefined);
             setActiveView('entry');
-          }}>+</NewEntryButton>
+          }} aria-label="Create a new entry">+</NewEntryButton>
         </HeaderControls>
       </Header>
 
