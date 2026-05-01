@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
@@ -504,8 +504,48 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
   // State for handling password when locking
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastTypeSoundRef = useRef(0);
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const characterCount = content.length;
+
+  const playTypeSound = (key: string) => {
+    if (!canEdit || key.length !== 1) return;
+
+    const now = performance.now();
+    if (now - lastTypeSoundRef.current < 32) return;
+    lastTypeSoundRef.current = now;
+
+    try {
+      const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+
+      const audioContext = audioContextRef.current ?? new AudioContextCtor();
+      audioContextRef.current = audioContext;
+
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const startTime = audioContext.currentTime;
+      const duration = 0.018;
+
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(135 + Math.random() * 45, startTime);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(850, startTime);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.018, startTime + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    } catch (error) {
+      console.warn('Unable to play typing sound:', error);
+    }
+  };
 
   useEffect(() => {
     if (entry) {
@@ -730,6 +770,7 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
                 placeholder="Start writing. No ceremony required."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => playTypeSound(e.key)}
                 disabled={!canEdit}
                 readOnly={!canEdit}
               />

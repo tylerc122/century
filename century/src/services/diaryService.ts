@@ -5,6 +5,7 @@ import storageService from './storageService';
 // Supabase storage implementation
 class DiaryStorage {
   private cachedEntries: DiaryEntry[] | null = null;
+  private readonly summaryColumns = 'id,title,content,date,created_at,is_locked,is_favorite,is_retroactive';
   
   constructor() {
     // No need to preload data, we'll fetch from Supabase when needed
@@ -39,11 +40,11 @@ class DiaryStorage {
   }
   
   // Get all entries
-  async getAllEntries(forceRefresh = false): Promise<DiaryEntry[]> {
+  async getAllEntries(forceRefresh = false, includeImages = false): Promise<DiaryEntry[]> {
     try {
       // Check cache first
       const cachedEntries = storageService.getCachedEntries();
-      if (cachedEntries && !forceRefresh) {
+      if (cachedEntries && !forceRefresh && !includeImages) {
         console.log('Using cached entries');
         this.cachedEntries = cachedEntries;
         return cachedEntries;
@@ -53,7 +54,7 @@ class DiaryStorage {
       
       const { data, error } = await supabase
         .from('diary_entries')
-        .select('*')
+        .select(includeImages ? '*' : this.summaryColumns)
         .eq('user_id', userId)
         .order('date', { ascending: false });
       
@@ -77,6 +78,26 @@ class DiaryStorage {
         return cachedEntries;
       }
       return [];
+    }
+  }
+
+  async getEntryById(entryId: string): Promise<DiaryEntry | undefined> {
+    try {
+      const userId = await this.getUserId();
+
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .select('*')
+        .eq('id', entryId)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      return data ? this.convertToDiaryEntry(data) : undefined;
+    } catch (error) {
+      console.error('Error getting entry by id:', error);
+      const cachedEntry = storageService.getCachedEntries()?.find(entry => entry.id === entryId);
+      return cachedEntry;
     }
   }
   
@@ -476,6 +497,10 @@ export interface UserProfileData {
 export const diaryService = {
   getAllEntries: async (forceRefresh = false): Promise<DiaryEntry[]> => {
     return storage.getAllEntries(forceRefresh);
+  },
+
+  getEntryById: async (entryId: string): Promise<DiaryEntry | undefined> => {
+    return storage.getEntryById(entryId);
   },
   
   searchEntries: async (query: string): Promise<DiaryEntry[]> => {

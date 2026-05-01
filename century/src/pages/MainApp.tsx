@@ -8,6 +8,7 @@ import Settings from '../components/Settings';
 import { DiaryEntry } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import diaryService from '../services/diaryService';
 
 // Styled components
 const AppContainer = styled.div`
@@ -144,6 +145,13 @@ function MainApp() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const hydrateEntry = async (entry: DiaryEntry) => {
+    const fullEntry = await diaryService.getEntryById(entry.id);
+    if (fullEntry) {
+      setSelectedEntry(fullEntry);
+    }
+  };
+
   return (
     <AppContainer>
       <Header>
@@ -163,10 +171,12 @@ function MainApp() {
             onEditEntry={(entry) => {
               setSelectedEntry(entry);
               setActiveView('entry');
+              hydrateEntry(entry);
             }}
             onViewEntry={(entry) => {
               setSelectedEntry(entry);
               setActiveView('viewEntry');
+              hydrateEntry(entry);
             }}
             refreshTrigger={refreshTrigger}
           />
