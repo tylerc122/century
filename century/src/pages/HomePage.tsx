@@ -9,7 +9,10 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: ${({ theme }) => theme.background};
+  background:
+    radial-gradient(circle at 16% 18%, ${({ theme }) => theme.accent1}2b, transparent 25rem),
+    radial-gradient(circle at 84% 20%, ${({ theme }) => theme.accent2}2b, transparent 25rem),
+    linear-gradient(135deg, ${({ theme }) => theme.background}, ${({ theme }) => theme.light});
   padding: 2rem;
   text-align: center;
   position: relative;
@@ -17,7 +20,7 @@ const Container = styled.div`
 
 const Logo = styled.h1`
   font-size: clamp(2.6rem, 8vw, 4.8rem);
-  font-weight: 650;
+  font-weight: 800;
   color: ${({ theme }) => theme.foreground};
   margin-bottom: 0.75rem;
   letter-spacing: 0;
@@ -29,6 +32,7 @@ const Tagline = styled.p`
   color: ${({ theme }) => theme.secondary};
   max-width: 600px;
   margin-bottom: 2.5rem;
+  line-height: 1.7;
 `;
 
 const ButtonContainer = styled.div`
@@ -44,7 +48,7 @@ const ButtonContainer = styled.div`
 
 const Button = styled.button`
   padding: 0.75rem 2rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -95,9 +99,10 @@ const DownloadLink = styled.a`
 `;
 
 const PrimaryButton = styled(Button)`
-  background-color: ${({ theme }) => theme.primary};
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.accent1});
   color: white;
   border: none;
+  box-shadow: 0 12px 24px ${({ theme }) => theme.primary}30, inset 0 1px 0 rgba(255,255,255,0.28);
   
   &:hover {
     background-color: ${({ theme }) => theme.primary + 'ee'};
@@ -105,7 +110,7 @@ const PrimaryButton = styled(Button)`
 `;
 
 const SecondaryButton = styled(Button)`
-  background-color: transparent;
+  background-color: ${({ theme }) => theme.cardBackground}b8;
   color: ${({ theme }) => theme.primary};
   border: 1px solid ${({ theme }) => theme.primary};
   

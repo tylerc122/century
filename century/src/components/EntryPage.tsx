@@ -19,7 +19,7 @@ const PageContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: ${({ theme }) => theme.background};
+  background: transparent;
   overflow: auto;
 `;
 
@@ -31,8 +31,9 @@ const PageHeader = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.border};
   position: sticky;
   top: 0;
-  background-color: ${({ theme }) => theme.headerBackground || theme.background};
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}ee;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 10px 24px rgba(86, 57, 43, 0.06);
   z-index: 10;
   
   @media (max-width: 768px) {
@@ -45,7 +46,7 @@ const PageHeader = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 720;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
   
@@ -59,7 +60,10 @@ const EditorContainer = styled.div`
   display: flex;
   flex: 1;
   height: calc(100vh - 140px);
-  background: ${({ theme }) => `linear-gradient(180deg, ${theme.background} 0%, ${theme.cardBackground} 100%)`};
+  background:
+    radial-gradient(circle at 18% 4%, ${({ theme }) => theme.accent2}1f, transparent 24rem),
+    radial-gradient(circle at 86% 18%, ${({ theme }) => theme.accent1}1f, transparent 24rem),
+    transparent;
   
   @media (max-width: 768px) {
     flex-direction: column;
@@ -82,9 +86,10 @@ const EditorContent = styled.div`
 
 const EditorSidebar = styled.div`
   width: 300px;
-  border-left: 1px solid ${({ theme }) => theme.border};
+  border-left: 1px solid ${({ theme }) => theme.border}cc;
   padding: 1.5rem;
-  background-color: ${({ theme }) => theme.headerBackground || theme.background};
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}b8;
+  backdrop-filter: blur(14px);
   
   @media (max-width: 768px) {
     width: 100%;
@@ -105,11 +110,12 @@ const ActionButtons = styled.div`
 `;
 
 const WritingSurface = styled.div`
-  background-color: ${({ theme }) => theme.cardBackground};
-  border: 1px solid ${({ theme }) => theme.border};
+  background:
+    linear-gradient(180deg, ${({ theme }) => theme.cardBackground} 0%, ${({ theme }) => theme.light} 100%);
+  border: 1px solid ${({ theme }) => theme.border}dd;
   border-radius: 8px;
-  box-shadow: 0 14px 36px rgba(93, 64, 55, 0.12);
-  padding: 2rem;
+  box-shadow: 0 24px 60px rgba(86, 57, 43, 0.14), 0 2px 8px rgba(86, 57, 43, 0.08), inset 0 1px 0 rgba(255,255,255,0.78);
+  padding: 2.2rem;
 
   @media (max-width: 768px) {
     padding: 1.25rem;
@@ -133,6 +139,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.26);
   
   @media (max-width: 768px) {
     padding: 0.6rem 1.2rem;
@@ -141,20 +148,23 @@ const Button = styled.button`
 `;
 
 const CancelButton = styled(Button)`
-  background-color: ${({ theme }) => theme.light};
-  color: ${({ theme }) => theme.foreground};
+  background-color: ${({ theme }) => theme.cardBackground};
+  color: ${({ theme }) => theme.secondary};
+  border: 1px solid ${({ theme }) => theme.border};
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    color: ${({ theme }) => theme.foreground};
+    background-color: ${({ theme }) => theme.light};
   }
 `;
 
 const SaveButton = styled(Button)`
-  background-color: ${({ theme }) => theme.primary};
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.accent1});
   color: white;
+  box-shadow: 0 10px 20px ${({ theme }) => theme.primary}2f, inset 0 1px 0 rgba(255,255,255,0.3);
   
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
+    filter: saturate(1.08) brightness(1.02);
   }
 `;
 
@@ -177,7 +187,7 @@ const Input = styled.input`
   padding: 0.75rem;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 6px;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.cardBackground};
   color: ${({ theme }) => theme.foreground};
   font-size: 1rem;
   
@@ -232,7 +242,7 @@ const TitleInput = styled(Input)<{ disabled?: boolean }>`
   border: none;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   border-radius: 0;
-  font-weight: 650;
+  font-weight: 760;
   margin-bottom: 1.5rem;
   background-color: transparent;
   letter-spacing: 0;
@@ -256,8 +266,8 @@ const TextArea = styled.textarea<{ disabled?: boolean }>`
   border: none;
   background-color: transparent;
   color: ${({ theme }) => theme.foreground};
-  font-size: 1.1rem;
-  line-height: 1.75;
+  font-size: 1.08rem;
+  line-height: 1.78;
   resize: none;
   
   &:focus {
@@ -305,13 +315,17 @@ const ToggleLabel = styled.label`
   cursor: pointer;
   font-size: 0.9rem;
   color: ${({ theme }) => theme.foreground};
+  background: ${({ theme }) => theme.cardBackground}99;
+  border: 1px solid ${({ theme }) => theme.border}aa;
+  border-radius: 8px;
+  padding: 0.65rem 0.7rem;
 `;
 
 const ToggleSwitch = styled.div<{ checked: boolean }>`
   position: relative;
   width: 40px;
   height: 20px;
-  background-color: ${({ checked, theme }) => checked ? theme.primary : theme.border};
+  background: ${({ checked, theme }) => checked ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent1})` : theme.border};
   border-radius: 10px;
   transition: background-color 0.2s ease;
   
@@ -338,11 +352,11 @@ const ToggleInput = styled.input`
 const ImageUploadArea = styled.div`
   padding: 1rem;
   border: 2px dashed ${({ theme }) => theme.border};
-  border-radius: 6px;
+  border-radius: 8px;
   text-align: center;
   margin-bottom: 1rem;
   cursor: pointer;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}99;
   
   &:hover {
     border-color: ${({ theme }) => theme.primary};

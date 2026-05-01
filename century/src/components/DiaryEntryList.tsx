@@ -13,9 +13,9 @@ const Container = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem);
   overflow-y: auto;
-  background-color: ${({ theme }) => theme.background};
+  background: transparent;
   position: relative;
 `;
 
@@ -40,9 +40,10 @@ const HeadingGroup = styled.div`
 
 const PageHeading = styled.h2`
   color: ${({ theme }) => theme.foreground};
-  font-size: 1.35rem;
-  font-weight: 650;
+  font-size: 1.5rem;
+  font-weight: 750;
   margin: 0;
+  letter-spacing: 0;
 `;
 
 const EntryCount = styled.span`
@@ -64,13 +65,14 @@ const SearchSortContainer = styled.div`
 const SearchInput = styled.input`
   flex: 1;
   min-width: 240px;
-  padding: 0.72rem 0.9rem;
+  padding: 0.78rem 0.95rem;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   color: ${({ theme }) => theme.foreground};
   font-size: 0.95rem;
   letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   
   &::placeholder {
     color: ${({ theme }) => theme.secondary};
@@ -94,11 +96,11 @@ const SearchInput = styled.input`
 
 const StyledDropdownContainer = styled.div`
   position: relative;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 6px rgba(93, 64, 55, 0.08);
+  padding: 10px 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   min-width: 120px;
   cursor: pointer;
   display: flex;
@@ -136,7 +138,7 @@ const DropdownMenu = styled.div`
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid ${({ theme }) => theme.border};
-  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+  box-shadow: 0 16px 36px rgba(86, 57, 43, 0.16);
   z-index: 100;
 `;
 
@@ -173,14 +175,16 @@ const HiddenSelect = styled.select`
 `;
 
 const SortButton = styled.button<{ active: boolean }>`
+  min-width: 44px;
   padding: 0.75rem 1rem;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   color: ${({ active, theme }) => active ? theme.primary : theme.secondary};
   border: 1px solid ${({ theme, active }) => active ? theme.primary : theme.border};
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   
   &:hover {
     background-color: ${({ theme, active }) => active ? theme.primary + '10' : theme.light};
@@ -199,23 +203,24 @@ const SortButton = styled.button<{ active: boolean }>`
 
 const EntryList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+  gap: 1.1rem;
   padding: 0.25rem 0 1.5rem;
 `;
 
 const EntryCard = styled.div<{ isLocked?: boolean }>`
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background:
+    linear-gradient(180deg, ${({ theme }) => theme.cardBackground} 0%, ${({ theme }) => theme.light} 100%);
   box-shadow: ${({ theme }) => theme.cardShadow};
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
   cursor: pointer;
   position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid ${({ theme }) => theme.border};
+  border: 1px solid ${({ theme }) => theme.border}dd;
 
   &::before {
     content: '';
@@ -230,8 +235,8 @@ const EntryCard = styled.div<{ isLocked?: boolean }>`
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(93, 64, 55, 0.16);
+    transform: translateY(-4px);
+    box-shadow: 0 22px 42px rgba(86, 57, 43, 0.16), 0 3px 10px rgba(86, 57, 43, 0.1);
     border-color: ${({ theme }) => theme.primary + '55'};
     
     &::before {
@@ -258,7 +263,7 @@ const EntryStatusIcon = styled.span`
 
 const EntryTitle = styled.h3<{ isLocked?: boolean }>`
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 720;
   margin: 0;
   color: ${({ theme }) => theme.foreground};
   white-space: nowrap;
@@ -305,7 +310,7 @@ const EntryImagePreview = styled.div`
   width: 100%;
   overflow: hidden;
   position: relative;
-  background-color: ${({ theme }) => theme.background};
+  background: linear-gradient(135deg, ${({ theme }) => theme.light}, ${({ theme }) => theme.border}55);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -394,7 +399,7 @@ const MultipleImagesIndicator = styled.div`
   right: 8px;
   background-color: rgba(0, 0, 0, 0.6);
   color: white;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 2px 6px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -408,11 +413,11 @@ const CardActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  padding: 0.25rem 0.75rem;
-  border: none;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid ${({ theme }) => theme.border}aa;
   border-radius: 4px;
-  background-color: ${({ theme }) => theme.light};
-  color: ${({ theme }) => theme.foreground};
+  background-color: ${({ theme }) => theme.cardBackground}cc;
+  color: ${({ theme }) => theme.secondary};
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -422,7 +427,8 @@ const ActionButton = styled.button`
   gap: 0.25rem;
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    background-color: ${({ theme }) => theme.light};
+    color: ${({ theme }) => theme.foreground};
   }
 `;
 
@@ -471,6 +477,10 @@ const EmptyMessage = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  background: ${({ theme }) => theme.cardBackground}cc;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const EmptyTitle = styled.strong`

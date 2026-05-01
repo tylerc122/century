@@ -15,29 +15,33 @@ const AppContainer = styled.div`
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: ${({ theme }) => theme.background};
+  background:
+    radial-gradient(circle at 12% 4%, ${({ theme }) => theme.accent1}22, transparent 24rem),
+    radial-gradient(circle at 88% 12%, ${({ theme }) => theme.accent2}22, transparent 24rem),
+    ${({ theme }) => theme.background};
   color: ${({ theme }) => theme.foreground};
   font-family: var(--font-family);
   font-size: var(--font-size);
 `;
 
 const Header = styled.header`
-  padding: 14px 24px;
-  background-color: ${({ theme }) => theme.headerBackground || theme.background};
+  padding: 12px 24px;
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}ee;
+  backdrop-filter: blur(18px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid ${({ theme }) => theme.border};
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) inset;
+  border-bottom: 1px solid ${({ theme }) => theme.border}cc;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.58) inset, 0 10px 24px rgba(86, 57, 43, 0.06);
   z-index: 20;
 `;
 
 const Title = styled.h1`
-  font-size: 24px;
-  font-weight: 500;
+  font-size: 25px;
+  font-weight: 700;
   color: ${({ theme }) => theme.foreground};
   letter-spacing: 0.03em;
-  opacity: 0.85;
+  opacity: 0.92;
   font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -54,10 +58,10 @@ const HeaderControls = styled.div`
 `;
 
 const NewEntryButton = styled.button`
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.primary};
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.accent1});
   border: none;
   color: white;
   font-size: 22px;
@@ -66,10 +70,13 @@ const NewEntryButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: 0 9px 18px ${({ theme }) => theme.primary}33, inset 0 1px 0 rgba(255,255,255,0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
   
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'DD'};
+    filter: saturate(1.08) brightness(1.02);
+    box-shadow: 0 12px 24px ${({ theme }) => theme.primary}3d, inset 0 1px 0 rgba(255,255,255,0.35);
+    transform: translateY(-1px);
   }
   
   &:active {
@@ -93,23 +100,29 @@ const Navigation = styled.nav`
   display: flex;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.75rem 1rem;
-  background-color: ${({ theme }) => theme.navBackground};
-  border-top: 1px solid ${({ theme }) => theme.border};
+  padding: 0.6rem 1rem 0.8rem;
+  background-color: ${({ theme }) => theme.navBackground}e8;
+  backdrop-filter: blur(18px);
+  border-top: 1px solid ${({ theme }) => theme.border}cc;
+  box-shadow: 0 -10px 22px rgba(86, 57, 43, 0.05);
 `;
 
 const NavButton = styled.button<{ active: boolean }>`
   min-width: 104px;
-  padding: 0.6rem 1rem;
-  border: 1px solid ${props => props.active ? props.theme.primary : 'transparent'};
+  padding: 0.62rem 1rem;
+  border: 1px solid ${props => props.active ? props.theme.primary + '44' : 'transparent'};
   border-radius: 8px;
-  background-color: ${props => props.active ? props.theme.primary : 'transparent'};
-  color: ${props => props.active ? '#fff' : props.theme.foreground};
-  font-weight: 500;
+  background: ${props => props.active ? `linear-gradient(135deg, ${props.theme.primary}, ${props.theme.accent1})` : 'transparent'};
+  color: ${props => props.active ? '#fff' : props.theme.secondary};
+  font-weight: 650;
   cursor: pointer;
+  box-shadow: ${props => props.active ? `0 8px 18px ${props.theme.primary}24` : 'none'};
+  transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 
   &:hover {
-    background-color: ${props => props.active ? props.theme.primary + 'dd' : props.theme.light};
+    background-color: ${props => props.active ? 'transparent' : props.theme.light};
+    color: ${props => props.active ? '#fff' : props.theme.foreground};
+    transform: translateY(-1px);
   }
 
   @media (max-width: 520px) {

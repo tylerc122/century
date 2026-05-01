@@ -32,7 +32,7 @@ const MemoryBadge = styled.span`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: ${({ theme }) => theme.info};
+  background: linear-gradient(135deg, ${({ theme }) => theme.info}, ${({ theme }) => theme.accent2});
   color: white;
   border-radius: 20px;
   padding: 0.25rem 0.75rem;
@@ -42,17 +42,20 @@ const MemoryBadge = styled.span`
 `;
 
 const MemoryCard = styled.div<{ isLocked?: boolean }>`
-  padding: 1rem 1.1rem;
+  padding: 1rem 1.15rem;
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background:
+    linear-gradient(135deg, ${({ theme }) => theme.cardBackground} 0%, ${({ theme }) => theme.light} 100%);
   box-shadow: ${({ theme }) => theme.cardShadow};
   cursor: pointer;
   border: 1px solid ${({ theme }) => theme.border};
   border-left: 4px solid ${({ theme }) => theme.info};
   position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 
   &:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 38px rgba(86, 57, 43, 0.14);
   }
 `;
 
