@@ -13,34 +13,66 @@ const Container = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 1.35rem clamp(1rem, 3vw, 2rem);
   overflow-y: auto;
-  background-color: ${({ theme }) => theme.background};
+  background: transparent;
   position: relative;
+`;
+
+const ListHeader = styled.div`
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 680px) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+`;
+
+const HeadingGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+`;
+
+const PageHeading = styled.h2`
+  color: ${({ theme }) => theme.foreground};
+  font-size: 1.5rem;
+  font-weight: 750;
+  margin: 0;
+  letter-spacing: 0;
+`;
+
+const EntryCount = styled.span`
+  color: ${({ theme }) => theme.secondary};
+  font-size: 0.9rem;
 `;
 
 const SearchSortContainer = styled.div`
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  background-color: ${({ theme }) => theme.headerBackground};
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: ${({ theme }) => theme.cardShadow};
+  align-items: center;
+
+  @media (max-width: 680px) {
+    width: 100%;
+  }
 `;
 
 const SearchInput = styled.input`
   flex: 1;
-  min-width: 200px;
-  padding: 0.75rem 1rem;
+  min-width: 240px;
+  padding: 0.78rem 0.95rem;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   color: ${({ theme }) => theme.foreground};
   font-size: 0.95rem;
-  transition: all 0.3s ease;
   letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   
   &::placeholder {
     color: ${({ theme }) => theme.secondary};
@@ -56,15 +88,19 @@ const SearchInput = styled.input`
   &:hover {
     border-color: ${({ theme }) => theme.secondary};
   }
+
+  @media (max-width: 680px) {
+    min-width: 100%;
+  }
 `;
 
 const StyledDropdownContainer = styled.div`
   position: relative;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 6px rgba(93, 64, 55, 0.08);
+  padding: 10px 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   min-width: 120px;
   cursor: pointer;
   display: flex;
@@ -102,7 +138,7 @@ const DropdownMenu = styled.div`
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid ${({ theme }) => theme.border};
-  box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+  box-shadow: 0 16px 36px rgba(86, 57, 43, 0.16);
   z-index: 100;
 `;
 
@@ -139,15 +175,16 @@ const HiddenSelect = styled.select`
 `;
 
 const SortButton = styled.button<{ active: boolean }>`
+  min-width: 44px;
   padding: 0.75rem 1rem;
-  background-color: ${({ theme }) => theme.cardBackground};
+  background-color: ${({ theme }) => theme.cardBackground}ee;
   color: ${({ active, theme }) => active ? theme.primary : theme.secondary};
   border: 1px solid ${({ theme, active }) => active ? theme.primary : theme.border};
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
   font-size: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 8px 18px rgba(86, 57, 43, 0.06);
   
   &:hover {
     background-color: ${({ theme, active }) => active ? theme.primary + '10' : theme.light};
@@ -166,23 +203,24 @@ const SortButton = styled.button<{ active: boolean }>`
 
 const EntryList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
-  padding: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+  gap: 1.1rem;
+  padding: 0.25rem 0 1.5rem;
 `;
 
 const EntryCard = styled.div<{ isLocked?: boolean }>`
-  border-radius: 12px;
-  background-color: ${({ theme }) => theme.cardBackground};
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, ${({ theme }) => theme.cardBackground} 0%, ${({ theme }) => theme.light} 100%);
   box-shadow: ${({ theme }) => theme.cardShadow};
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
   cursor: pointer;
   position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid ${({ theme }) => theme.border};
+  border: 1px solid ${({ theme }) => theme.border}dd;
 
   &::before {
     content: '';
@@ -197,8 +235,9 @@ const EntryCard = styled.div<{ isLocked?: boolean }>`
   }
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(93, 64, 55, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 22px 42px rgba(86, 57, 43, 0.16), 0 3px 10px rgba(86, 57, 43, 0.1);
+    border-color: ${({ theme }) => theme.primary + '55'};
     
     &::before {
       opacity: 1;
@@ -224,7 +263,7 @@ const EntryStatusIcon = styled.span`
 
 const EntryTitle = styled.h3<{ isLocked?: boolean }>`
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 720;
   margin: 0;
   color: ${({ theme }) => theme.foreground};
   white-space: nowrap;
@@ -260,7 +299,7 @@ const EntryPreview = styled.p<{ isLocked?: boolean }>`
 `;
 
 const EntryCardContent = styled.div`
-  padding: 1.25rem 1.25rem 0.75rem;
+  padding: 1rem 1rem 0.65rem;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -271,7 +310,7 @@ const EntryImagePreview = styled.div`
   width: 100%;
   overflow: hidden;
   position: relative;
-  background-color: ${({ theme }) => theme.background};
+  background: linear-gradient(135deg, ${({ theme }) => theme.light}, ${({ theme }) => theme.border}55);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -360,7 +399,7 @@ const MultipleImagesIndicator = styled.div`
   right: 8px;
   background-color: rgba(0, 0, 0, 0.6);
   color: white;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 2px 6px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -369,16 +408,16 @@ const MultipleImagesIndicator = styled.div`
 const CardActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding: 0.5rem 1.25rem 1rem;
+  padding: 0.35rem 1rem 1rem;
   gap: 0.5rem;
 `;
 
 const ActionButton = styled.button`
-  padding: 0.25rem 0.75rem;
-  border: none;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid ${({ theme }) => theme.border}aa;
   border-radius: 4px;
-  background-color: ${({ theme }) => theme.light};
-  color: ${({ theme }) => theme.foreground};
+  background-color: ${({ theme }) => theme.cardBackground}cc;
+  color: ${({ theme }) => theme.secondary};
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -388,7 +427,8 @@ const ActionButton = styled.button`
   gap: 0.25rem;
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    background-color: ${({ theme }) => theme.light};
+    color: ${({ theme }) => theme.foreground};
   }
 `;
 
@@ -414,7 +454,8 @@ const LockButton = styled(ActionButton)`
 
 
 const LoadingMessage = styled.div`
-  padding: 1rem;
+  grid-column: 1 / -1;
+  padding: 3rem 1rem;
   text-align: center;
   color: ${({ theme }) => theme.secondary};
 `;
@@ -436,6 +477,15 @@ const EmptyMessage = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  background: ${({ theme }) => theme.cardBackground}cc;
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 8px;
+  box-shadow: ${({ theme }) => theme.cardShadow};
+`;
+
+const EmptyTitle = styled.strong`
+  color: ${({ theme }) => theme.foreground};
+  font-size: 1.05rem;
 `;
 
 // Use the utility function for formatting dates
@@ -483,6 +533,13 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
       const loadedEntries = await diaryService.getAllEntries();
       setEntries(loadedEntries);
       applyFiltersAndSort(loadedEntries, searchQuery, sortCriteria, sortAscending);
+
+      diaryService.getAllEntries(true).then((freshEntries) => {
+        setEntries(freshEntries);
+        applyFiltersAndSort(freshEntries, searchQuery, sortCriteria, sortAscending);
+      }).catch((error) => {
+        console.error('Failed to refresh entries:', error);
+      });
     } catch (error) {
       console.error('Failed to load entries:', error);
       setEntries([]);
@@ -494,21 +551,35 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
 
 
   
-  const applyFiltersAndSort = async (
+  const applyFiltersAndSort = (
     entriesList: DiaryEntry[], 
     query: string, 
     criteria: 'date' | 'title' | 'favorite', 
     ascending: boolean
   ) => {
     try {
-      // Apply search filter
+      const normalizedQuery = query.trim().toLowerCase();
       let filtered = entriesList;
-      if (query.trim()) {
-        filtered = await diaryService.searchEntries(query);
+      if (normalizedQuery) {
+        filtered = entriesList.filter((entry) => {
+          if (entry.isLocked) return false;
+          return entry.title.toLowerCase().includes(normalizedQuery) ||
+            entry.content.toLowerCase().includes(normalizedQuery);
+        });
       }
       
-      // Apply sorting
-      filtered = await diaryService.sortEntries(filtered, criteria, ascending);
+      filtered = [...filtered].sort((a, b) => {
+        let comparison = 0;
+        if (criteria === 'date') {
+          comparison = a.date.getTime() - b.date.getTime();
+        } else if (criteria === 'title') {
+          comparison = a.title.localeCompare(b.title);
+        } else {
+          comparison = (a.isFavorite === b.isFavorite) ? 0 : a.isFavorite ? -1 : 1;
+        }
+
+        return ascending ? comparison : -comparison;
+      });
       
       setFilteredEntries(filtered);
     } catch (error) {
@@ -566,76 +637,86 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
 
   return (
     <Container>
-      <SearchSortContainer>
-        <SearchInput 
-          type="text" 
-          placeholder="Search entries..." 
-          value={searchQuery}
-          onChange={handleSearch}
-        />
-        
-        <StyledDropdownContainer className="dropdown-container" onClick={handleDropdownClick}>
-          <DropdownHeader 
-            className={dropdownOpen ? 'open' : ''}
-          >
-            {sortCriteria.charAt(0).toUpperCase() + sortCriteria.slice(1)}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </DropdownHeader>
+      <ListHeader>
+        <HeadingGroup>
+          <PageHeading>Entries</PageHeading>
+          <EntryCount>
+            {isLoading ? 'Loading your journal' : `${filteredEntries.length} ${filteredEntries.length === 1 ? 'entry' : 'entries'}`}
+          </EntryCount>
+        </HeadingGroup>
+        <SearchSortContainer>
+          <SearchInput 
+            type="text" 
+            placeholder="Search entries" 
+            value={searchQuery}
+            onChange={handleSearch}
+          />
           
-          {/* Hidden accessible select for screen readers */}
-          <HiddenSelect 
-            value={sortCriteria} 
-            onChange={handleSortChange}
-            aria-label="Sort entries by"
-          >
-            <option value="date">Date</option>
-            <option value="title">Title</option>
-            <option value="favorite">Favorites</option>
-          </HiddenSelect>
+          <StyledDropdownContainer className="dropdown-container" onClick={handleDropdownClick}>
+            <DropdownHeader 
+              className={dropdownOpen ? 'open' : ''}
+            >
+              {sortCriteria.charAt(0).toUpperCase() + sortCriteria.slice(1)}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </DropdownHeader>
+            
+            <HiddenSelect 
+              value={sortCriteria} 
+              onChange={handleSortChange}
+              aria-label="Sort entries by"
+            >
+              <option value="date">Date</option>
+              <option value="title">Title</option>
+              <option value="favorite">Favorites</option>
+            </HiddenSelect>
+            
+            {dropdownOpen && (
+              <DropdownMenu>
+                <MenuItem 
+                  active={sortCriteria === 'date'} 
+                  onClick={() => handleMenuItemClick('date')}
+                >
+                  {sortCriteria === 'date' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>} Date
+                </MenuItem>
+                <MenuItem 
+                  active={sortCriteria === 'title'} 
+                  onClick={() => handleMenuItemClick('title')}
+                >
+                  {sortCriteria === 'title' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>} Title
+                </MenuItem>
+                <MenuItem 
+                  active={sortCriteria === 'favorite'} 
+                  onClick={() => handleMenuItemClick('favorite')}
+                >
+                  {sortCriteria === 'favorite' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>} Favorites
+                </MenuItem>
+              </DropdownMenu>
+            )}
+          </StyledDropdownContainer>
           
-          {dropdownOpen && (
-            <DropdownMenu>
-              <MenuItem 
-                active={sortCriteria === 'date'} 
-                onClick={() => handleMenuItemClick('date')}
-              >
-                {sortCriteria === 'date' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>} Date
-              </MenuItem>
-              <MenuItem 
-                active={sortCriteria === 'title'} 
-                onClick={() => handleMenuItemClick('title')}
-              >
-                {sortCriteria === 'title' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>} Title
-              </MenuItem>
-              <MenuItem 
-                active={sortCriteria === 'favorite'} 
-                onClick={() => handleMenuItemClick('favorite')}
-              >
-                {sortCriteria === 'favorite' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>} Favorites
-              </MenuItem>
-            </DropdownMenu>
-          )}
-        </StyledDropdownContainer>
-        
-        <SortButton 
-          active={sortAscending} 
-          onClick={toggleSortDirection}
-        >
-          {sortAscending ? '↑' : '↓'}
-        </SortButton>
-      </SearchSortContainer>
+          <SortButton 
+            active={sortAscending} 
+            onClick={toggleSortDirection}
+            aria-label={sortAscending ? 'Sort ascending' : 'Sort descending'}
+            title={sortAscending ? 'Sort ascending' : 'Sort descending'}
+          >
+            {sortAscending ? '↑' : '↓'}
+          </SortButton>
+        </SearchSortContainer>
+      </ListHeader>
 
       <MemoryView 
         onSelectEntry={setSelectedEntry}
         onViewEntry={onViewEntry} 
+        entries={entries}
       />
       
       <EntryList>
@@ -854,10 +935,14 @@ const DiaryEntryList: React.FC<DiaryEntryListProps> = ({
                   <line x1="12" y1="18" x2="12" y2="12"></line>
                   <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
-                <div>No entries yet. Click the + button to create your first entry!</div>
+                <EmptyTitle>No entries yet</EmptyTitle>
+                <div>Use the + button to create your first entry.</div>
               </>
             ) : (
-              "No entries match your search."
+              <>
+                <EmptyTitle>No matches</EmptyTitle>
+                <div>No entries match your search.</div>
+              </>
             )}
           </EmptyMessage>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { DiaryEntry } from '../types';
 import diaryService from '../services/diaryService';
@@ -19,7 +19,7 @@ const PageContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: ${({ theme }) => theme.background};
+  background: transparent;
   overflow: auto;
 `;
 
@@ -31,7 +31,9 @@ const PageHeader = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.border};
   position: sticky;
   top: 0;
-  background-color: ${({ theme }) => theme.headerBackground || theme.background};
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}ee;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 10px 24px rgba(86, 57, 43, 0.06);
   z-index: 10;
   
   @media (max-width: 768px) {
@@ -44,7 +46,7 @@ const PageHeader = styled.div`
 
 const PageTitle = styled.h1`
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 720;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
   
@@ -58,6 +60,10 @@ const EditorContainer = styled.div`
   display: flex;
   flex: 1;
   height: calc(100vh - 140px);
+  background:
+    radial-gradient(circle at 18% 4%, ${({ theme }) => theme.accent2}1f, transparent 24rem),
+    radial-gradient(circle at 86% 18%, ${({ theme }) => theme.accent1}1f, transparent 24rem),
+    transparent;
   
   @media (max-width: 768px) {
     flex-direction: column;
@@ -67,9 +73,9 @@ const EditorContainer = styled.div`
 
 const EditorContent = styled.div`
   flex: 1;
-  max-width: 900px;
+  max-width: 820px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem 2rem 4rem;
   width: 100%;
   
   @media (max-width: 768px) {
@@ -79,10 +85,11 @@ const EditorContent = styled.div`
 `;
 
 const EditorSidebar = styled.div`
-  width: 280px;
-  border-left: 1px solid ${({ theme }) => theme.border};
+  width: 300px;
+  border-left: 1px solid ${({ theme }) => theme.border}cc;
   padding: 1.5rem;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}b8;
+  backdrop-filter: blur(14px);
   
   @media (max-width: 768px) {
     width: 100%;
@@ -102,6 +109,28 @@ const ActionButtons = styled.div`
   }
 `;
 
+const WritingSurface = styled.div`
+  background:
+    linear-gradient(180deg, ${({ theme }) => theme.cardBackground} 0%, ${({ theme }) => theme.light} 100%);
+  border: 1px solid ${({ theme }) => theme.border}dd;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(86, 57, 43, 0.14), 0 2px 8px rgba(86, 57, 43, 0.08), inset 0 1px 0 rgba(255,255,255,0.78);
+  padding: 2.2rem;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+`;
+
+const WritingMeta = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: ${({ theme }) => theme.secondary};
+  font-size: 0.82rem;
+`;
+
 const Button = styled.button`
   padding: 0.75rem 1.5rem;
   border: none;
@@ -110,6 +139,7 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.26);
   
   @media (max-width: 768px) {
     padding: 0.6rem 1.2rem;
@@ -118,20 +148,23 @@ const Button = styled.button`
 `;
 
 const CancelButton = styled(Button)`
-  background-color: ${({ theme }) => theme.light};
-  color: ${({ theme }) => theme.foreground};
+  background-color: ${({ theme }) => theme.cardBackground};
+  color: ${({ theme }) => theme.secondary};
+  border: 1px solid ${({ theme }) => theme.border};
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    color: ${({ theme }) => theme.foreground};
+    background-color: ${({ theme }) => theme.light};
   }
 `;
 
 const SaveButton = styled(Button)`
-  background-color: ${({ theme }) => theme.primary};
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.accent1});
   color: white;
+  box-shadow: 0 10px 20px ${({ theme }) => theme.primary}2f, inset 0 1px 0 rgba(255,255,255,0.3);
   
   &:hover {
-    background-color: ${({ theme }) => theme.primary + 'dd'};
+    filter: saturate(1.08) brightness(1.02);
   }
 `;
 
@@ -154,7 +187,7 @@ const Input = styled.input`
   padding: 0.75rem;
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 6px;
-  background-color: ${({ theme }) => theme.background};
+  background-color: ${({ theme }) => theme.cardBackground};
   color: ${({ theme }) => theme.foreground};
   font-size: 1rem;
   
@@ -204,13 +237,15 @@ const CloseWarningButton = styled.button`
 `;
 
 const TitleInput = styled(Input)<{ disabled?: boolean }>`
-  font-size: 1.5rem;
-  padding: 1rem 0;
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  padding: 0 0 1rem;
   border: none;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   border-radius: 0;
-  font-weight: 500;
+  font-weight: 760;
   margin-bottom: 1.5rem;
+  background-color: transparent;
+  letter-spacing: 0;
   
   &:focus {
     border-color: ${({ theme }) => theme.primary};
@@ -226,13 +261,13 @@ const TitleInput = styled(Input)<{ disabled?: boolean }>`
 
 const TextArea = styled.textarea<{ disabled?: boolean }>`
   width: 100%;
-  min-height: calc(100vh - 300px);
+  min-height: calc(100vh - 390px);
   padding: 1rem 0;
   border: none;
-  background-color: ${({ theme }) => theme.background};
+  background-color: transparent;
   color: ${({ theme }) => theme.foreground};
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1.08rem;
+  line-height: 1.78;
   resize: none;
   
   &:focus {
@@ -280,13 +315,17 @@ const ToggleLabel = styled.label`
   cursor: pointer;
   font-size: 0.9rem;
   color: ${({ theme }) => theme.foreground};
+  background: ${({ theme }) => theme.cardBackground}99;
+  border: 1px solid ${({ theme }) => theme.border}aa;
+  border-radius: 8px;
+  padding: 0.65rem 0.7rem;
 `;
 
 const ToggleSwitch = styled.div<{ checked: boolean }>`
   position: relative;
   width: 40px;
   height: 20px;
-  background-color: ${({ checked, theme }) => checked ? theme.primary : theme.border};
+  background: ${({ checked, theme }) => checked ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent1})` : theme.border};
   border-radius: 10px;
   transition: background-color 0.2s ease;
   
@@ -313,10 +352,11 @@ const ToggleInput = styled.input`
 const ImageUploadArea = styled.div`
   padding: 1rem;
   border: 2px dashed ${({ theme }) => theme.border};
-  border-radius: 6px;
+  border-radius: 8px;
   text-align: center;
   margin-bottom: 1rem;
   cursor: pointer;
+  background-color: ${({ theme }) => theme.cardBackground}99;
   
   &:hover {
     border-color: ${({ theme }) => theme.primary};
@@ -343,7 +383,7 @@ const ImagePreview = styled.div<{ isCover?: boolean }>`
   position: relative;
   width: 100%;
   padding-top: 100%; /* 1:1 Aspect Ratio */
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
   border: ${({ isCover }) => isCover ? '2px solid #f0b979' : 'none'};
   box-shadow: ${({ isCover }) => isCover ? '0 0 8px rgba(240, 185, 121, 0.6)' : 'none'};
@@ -424,6 +464,46 @@ const ImageActionButton = styled.button`
   }
 `;
 
+const LockModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.52);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+const LockModal = styled.div`
+  background-color: ${({ theme }) => theme.cardBackground};
+  color: ${({ theme }) => theme.foreground};
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+  max-width: 420px;
+  width: 100%;
+`;
+
+const LockModalTitle = styled.h3`
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+`;
+
+const LockModalText = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.secondary};
+  line-height: 1.5;
+`;
+
+const LockModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+`;
+
 const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefresh }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -438,6 +518,48 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
   // State for handling password when locking
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastTypeSoundRef = useRef(0);
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const characterCount = content.length;
+
+  const playTypeSound = (key: string) => {
+    if (!canEdit || key.length !== 1) return;
+
+    const now = performance.now();
+    if (now - lastTypeSoundRef.current < 32) return;
+    lastTypeSoundRef.current = now;
+
+    try {
+      const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+
+      const audioContext = audioContextRef.current ?? new AudioContextCtor();
+      audioContextRef.current = audioContext;
+
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const startTime = audioContext.currentTime;
+      const duration = 0.018;
+
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(135 + Math.random() * 45, startTime);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(850, startTime);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.018, startTime + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    } catch (error) {
+      console.warn('Unable to play typing sound:', error);
+    }
+  };
 
   useEffect(() => {
     if (entry) {
@@ -647,23 +769,31 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
               </WarningBanner>
             )}
             
-            <TitleInput 
-              type="text" 
-              placeholder="Entry title" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              disabled={!canEdit}
-              readOnly={!canEdit}
-            />
-            
-            <TextArea 
-              placeholder="Write your thoughts..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              disabled={!canEdit}
-              readOnly={!canEdit}
-            />
+            <WritingSurface>
+              <TitleInput 
+                type="text" 
+                placeholder="Give this moment a name" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+                disabled={!canEdit}
+                readOnly={!canEdit}
+              />
+              
+              <TextArea 
+                placeholder="Start writing. No ceremony required."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => playTypeSound(e.key)}
+                disabled={!canEdit}
+                readOnly={!canEdit}
+              />
+
+              <WritingMeta>
+                <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+                <span>{characterCount} characters</span>
+              </WritingMeta>
+            </WritingSurface>
           </EditorContent>
           
           <EditorSidebar>
@@ -777,61 +907,25 @@ const EntryPage: React.FC<EntryPageProps> = ({ entry, onSave, onCancel, onRefres
     
       {/* Password modal for locking entries */}
       {isPasswordModalVisible && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '8px',
-              maxWidth: '400px',
-              width: '100%',
-            }}
-          >
-            <h3>Confirm Lock Entry</h3>
-            <p>Locking this entry will encrypt its content with your account password.</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-              <button
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#e0e0e0',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-                onClick={() => setIsPasswordModalVisible(false)}
-              >
+        <LockModalOverlay>
+          <LockModal>
+            <LockModalTitle>Confirm Lock Entry</LockModalTitle>
+            <LockModalText>Locking this entry will encrypt its content with your account password.</LockModalText>
+            <LockModalActions>
+              <CancelButton onClick={() => setIsPasswordModalVisible(false)}>
                 Cancel
-              </button>
-              <button
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#D2691E',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
+              </CancelButton>
+              <SaveButton
                 onClick={() => {
                   setIsLocked(true);
                   setIsPasswordModalVisible(false);
                 }}
               >
                 Lock Entry
-              </button>
-            </div>
-          </div>
-        </div>
+              </SaveButton>
+            </LockModalActions>
+          </LockModal>
+        </LockModalOverlay>
       )}
     </>
   );

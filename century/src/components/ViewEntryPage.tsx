@@ -18,7 +18,9 @@ const PageContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: ${({ theme }) => theme.background};
+  background:
+    radial-gradient(circle at 16% 4%, ${({ theme }) => theme.accent2}1f, transparent 24rem),
+    transparent;
   overflow: auto;
 `;
 
@@ -30,13 +32,15 @@ const PageHeader = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.border};
   position: sticky;
   top: 0;
-  background-color: ${({ theme }) => theme.headerBackground || theme.background};
+  background-color: ${({ theme }) => theme.headerBackground || theme.background}ee;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 10px 24px rgba(86, 57, 43, 0.06);
   z-index: 10;
 `;
 
 const PageTitle = styled.h1`
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 720;
   color: ${({ theme }) => theme.foreground};
   margin: 0;
 `;
@@ -54,19 +58,22 @@ const Button = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
 `;
 
 const CloseButton = styled(Button)`
-  background-color: ${({ theme }) => theme.light};
-  color: ${({ theme }) => theme.foreground};
+  background-color: ${({ theme }) => theme.cardBackground};
+  color: ${({ theme }) => theme.secondary};
+  border: 1px solid ${({ theme }) => theme.border};
   
   &:hover {
-    background-color: ${({ theme }) => theme.border};
+    color: ${({ theme }) => theme.foreground};
+    background-color: ${({ theme }) => theme.light};
   }
 `;
 
 const EditButton = styled(Button)<{ disabled?: boolean }>`
-  background-color: ${({ theme, disabled }) => disabled ? theme.border : theme.primary};
+  background: ${({ theme, disabled }) => disabled ? theme.border : `linear-gradient(135deg, ${theme.primary}, ${theme.accent1})`};
   color: ${({ disabled }) => disabled ? '#999' : 'white'};
   cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
   opacity: ${({ disabled }) => disabled ? 0.7 : 1};
@@ -87,14 +94,18 @@ const DeleteButton = styled(Button)`
 
 const EntryContainer = styled.div`
   max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin: 2rem auto 3rem;
+  padding: clamp(1.35rem, 4vw, 2.5rem);
   width: 100%;
+  background: ${({ theme }) => theme.cardBackground}d9;
+  border: 1px solid ${({ theme }) => theme.border}dd;
+  border-radius: 8px;
+  box-shadow: ${({ theme }) => theme.cardShadow};
 `;
 
 const EntryTitle = styled.h2`
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 780;
   color: ${({ theme }) => theme.foreground};
   margin: 0 0 1rem 0;
 `;
@@ -107,7 +118,7 @@ const EntryDate = styled.div`
 
 const EntryContent = styled.div`
   font-size: 1.1rem;
-  line-height: 1.6;
+  line-height: 1.78;
   white-space: pre-wrap;
   margin-bottom: 2rem;
   color: ${({ theme }) => theme.foreground};
@@ -124,8 +135,9 @@ const StatusBadge = styled.span`
   align-items: center;
   gap: 0.5rem;
   background-color: ${({ theme }) => theme.light};
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  padding: 0.32rem 0.75rem;
+  border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 500;
 `;
@@ -155,6 +167,7 @@ const ImageItem = styled.div`
   overflow: hidden;
   max-width: 250px;
   display: inline-block;
+  box-shadow: 0 12px 24px rgba(86, 57, 43, 0.13);
 `;
 
 const Image = styled.img`

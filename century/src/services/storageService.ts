@@ -42,7 +42,7 @@ class LocalStorageService {
 
   private readonly KEYS = {
     PROFILE: 'century_profile_cache',
-    ENTRIES: 'century_entries_cache',
+    ENTRIES: 'century_entries_summary_cache_v2',
     STATS: 'century_stats_cache',
     AUTH: 'century_auth_cache',
     LAST_SYNC: 'century_last_sync'
@@ -95,7 +95,10 @@ class LocalStorageService {
   cacheEntries(entries: DiaryEntry[]): void {
     try {
       // Limit the number of entries we cache to prevent localStorage from getting too large
-      const entriesToCache = entries.slice(0, this.config.maxEntries);
+      const entriesToCache = entries.slice(0, this.config.maxEntries).map(entry => ({
+        ...entry,
+        images: []
+      }));
       
       const cacheItem: CacheItem<DiaryEntry[]> = {
         data: entriesToCache,
@@ -185,8 +188,6 @@ class LocalStorageService {
         // Sort by date (newest first) and cache
         const sorted = merged.sort((a, b) => b.date.getTime() - a.date.getTime());
         this.cacheEntries(sorted);
-        // Clear last sync timestamp to force fresh fetch on next getAllEntries call
-        localStorage.removeItem(this.KEYS.LAST_SYNC);
       }
     } catch (error) {
       console.warn('Failed to update entries cache:', error);
@@ -200,8 +201,6 @@ class LocalStorageService {
       if (cached) {
         const filtered = cached.filter(entry => entry.id !== entryId);
         this.cacheEntries(filtered);
-        // Clear last sync timestamp to force fresh fetch on next getAllEntries call
-        localStorage.removeItem(this.KEYS.LAST_SYNC);
       }
     } catch (error) {
       console.warn('Failed to remove entry from cache:', error);

@@ -42,19 +42,21 @@ class AuthService {
   // Get current user
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionUser = sessionData.session?.user;
+
+      if (sessionUser) {
         // Get user profile data from database
         const { data: profileData } = await supabase
           .from('user_profiles')
           .select('username')
-          .eq('user_id', data.user.id)
+          .eq('user_id', sessionUser.id)
           .single();
           
         return {
-          id: data.user.id,
-          email: data.user.email || '',
-          firstName: profileData?.username || data.user.email?.split('@')[0] || '',
+          id: sessionUser.id,
+          email: sessionUser.email || '',
+          firstName: profileData?.username || sessionUser.email?.split('@')[0] || '',
           isAuthenticated: true
         };
       }
